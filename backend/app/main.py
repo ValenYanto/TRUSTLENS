@@ -8,7 +8,7 @@ from app.api.alerts import router as alerts_router
 from app.api.audit_logs import router as audit_logs_router
 from app.api.graph import router as graph_router
 from app.api.labels import router as labels_router
-
+from app.api.cross_border import router as cross_border_router
 
 app = FastAPI(
     title=settings.PROJECT_NAME,
@@ -48,3 +48,4 @@ app.include_router(alerts_router, prefix="/api/v1")
 app.include_router(audit_logs_router, prefix="/api/v1")
 app.include_router(graph_router, prefix="/api/v1")
 app.include_router(labels_router, prefix="/api/v1")
+app.include_router(cross_border_router, prefix="/api/v1")
