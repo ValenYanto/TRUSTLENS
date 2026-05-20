@@ -1,35 +1,45 @@
 "use client";
 
-import { FormEvent, useState } from "react";
 import { useRouter } from "next/navigation";
-import { ShieldCheck, Loader2 } from "lucide-react";
+import { Loader2, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 import { login } from "@/lib/auth";
+import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+    Card,
+    CardContent,
+    CardHeader,
+    CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 export default function LoginPage() {
     const router = useRouter();
 
-    const [email, setEmail] = useState("valen@trustlens.dev");
-    const [password, setPassword] = useState("password123");
-    const [loading, setLoading] = useState(false);
+    const {
+        register,
+        handleSubmit,
+        formState: { errors, isSubmitting },
+    } = useForm<LoginFormValues>({
+        resolver: zodResolver(loginSchema),
+        defaultValues: {
+            email: "valen@trustlens.dev",
+            password: "password123",
+        },
+    });
 
-    async function handleSubmit(event: FormEvent<HTMLFormElement>) {
-        event.preventDefault();
-        setLoading(true);
-
+    async function onSubmit(values: LoginFormValues) {
         try {
-            await login(email, password);
-            toast.success("Login successful");
+            await login(values.email, values.password);
+            toast.success("Access granted. Welcome to TrustLens.");
             router.push("/dashboard");
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Login failed");
-        } finally {
-            setLoading(false);
         }
     }
 
@@ -43,7 +53,7 @@ export default function LoginPage() {
                     <h1 className="text-4xl font-black tracking-tight text-cyan-400">
                         TRUSTLENS
                     </h1>
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.18em] text-emerald-300">
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.1em] text-emerald-300">
                         <span className="h-2 w-2 rounded-full bg-emerald-400" />
                         Secure Protocol Active
                     </div>
@@ -55,7 +65,9 @@ export default function LoginPage() {
                             <CardTitle className="trust-label text-slate-300">
                                 System Authentication
                             </CardTitle>
-                            <span className="text-xs font-medium text-cyan-400">NODE_TX_4492</span>
+                            <span className="trust-mono text-xs font-medium text-cyan-400">
+                                NODE_TX_4492
+                            </span>
                         </div>
                     </CardHeader>
 
@@ -64,7 +76,7 @@ export default function LoginPage() {
                             <div className="flex gap-4">
                                 <ShieldCheck className="mt-1 h-6 w-6 text-red-200" />
                                 <div>
-                                    <h2 className="font-bold uppercase text-red-100">
+                                    <h2 className="font-bold uppercase tracking-[0.08em] text-red-100">
                                         Level 4 Security Clearance Required
                                     </h2>
                                     <p className="mt-2 text-sm leading-6 text-slate-300">
@@ -75,44 +87,61 @@ export default function LoginPage() {
                             </div>
                         </div>
 
-                        <form onSubmit={handleSubmit} className="space-y-6">
+                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                             <div className="space-y-2">
                                 <Label className="trust-label">Personnel System ID</Label>
                                 <Input
                                     type="email"
-                                    value={email}
-                                    className="h-14 rounded-sm border-white/10 bg-[#050b18] text-slate-100"
-                                    onChange={(event) => setEmail(event.target.value)}
-                                    required
+                                    className="h-14 rounded-sm border-white/10 bg-[#050b18] text-slate-100 placeholder:text-slate-600"
+                                    placeholder="analyst@trustlens.dev"
+                                    {...register("email")}
                                 />
+                                {errors.email && (
+                                    <p className="text-sm text-red-200">{errors.email.message}</p>
+                                )}
                             </div>
 
                             <div className="space-y-2">
                                 <Label className="trust-label">Biometric Token Hash</Label>
                                 <Input
                                     type="password"
-                                    value={password}
-                                    className="h-14 rounded-sm border-white/10 bg-[#050b18] text-slate-100"
-                                    onChange={(event) => setPassword(event.target.value)}
-                                    required
+                                    className="h-14 rounded-sm border-white/10 bg-[#050b18] text-slate-100 placeholder:text-slate-600"
+                                    placeholder="Enter secure token"
+                                    {...register("password")}
                                 />
+                                {errors.password && (
+                                    <p className="text-sm text-red-200">
+                                        {errors.password.message}
+                                    </p>
+                                )}
                             </div>
 
                             <Button
                                 type="submit"
-                                className="h-14 w-full rounded-sm bg-cyan-400 font-bold uppercase tracking-[0.18em] text-[#06111f] hover:bg-cyan-300"
-                                disabled={loading}
+                                className="h-14 w-full rounded-sm bg-cyan-400 font-bold uppercase tracking-[0.1em] text-[#06111f] hover:bg-cyan-300"
+                                disabled={isSubmitting}
                             >
-                                {loading ? "Initializing..." : "Initialize Decryption"}
+                                {isSubmitting ? (
+                                    <>
+                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                        Initializing...
+                                    </>
+                                ) : (
+                                    "Initialize Decryption"
+                                )}
                             </Button>
 
                             <Button
                                 type="button"
                                 variant="outline"
-                                className="h-12 w-full rounded-sm border-white/10 bg-transparent uppercase tracking-[0.18em] text-slate-400 hover:bg-white/5"
+                                className="h-12 w-full rounded-sm border-white/10 bg-transparent uppercase tracking-[0.1em] text-slate-400 hover:bg-white/5 hover:text-slate-100"
                             >
                                 Emergency Access Bypass
                             </Button>
+
+                            <p className="text-center text-xs text-slate-600">
+                                Demo credentials: valen@trustlens.dev / password123
+                            </p>
                         </form>
                     </CardContent>
                 </Card>
