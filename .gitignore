@@ -1,0 +1,9 @@
+.env
+backend/.env
+venv/
+backend/venv/
+__pycache__/
+*.pyc
+.pytest_cache/
+app/ml/artifacts/*.pkl
+backend/app/ml/artifacts/*.pkl
