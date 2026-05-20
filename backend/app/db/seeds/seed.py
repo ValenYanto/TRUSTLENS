@@ -12,7 +12,7 @@ from app.models.label import Label
 from app.models.merchant import Merchant
 from app.models.transaction import Transaction
 from app.models.user import User
-
+from app.core.security import hash_password
 
 def risk_level_from_score(score: float) -> str:
     if score >= 0.75:
@@ -58,21 +58,21 @@ def seed_users(db):
         User(
             full_name="Valen Yanto",
             email="valen@trustlens.dev",
-            hashed_password="demo-password-hash",
+            hashed_password=hash_password("password123"),
             role="ADMIN",
             institution_name="TrustLens Lab",
         ),
         User(
             full_name="Fraud Analyst",
             email="analyst@trustlens.dev",
-            hashed_password="demo-password-hash",
+            hashed_password=hash_password("password123"),
             role="ANALYST",
             institution_name="Bank Nusantara",
         ),
         User(
             full_name="Institution Operator",
             email="operator@trustlens.dev",
-            hashed_password="demo-password-hash",
+            hashed_password=hash_password("password123"),
             role="INSTITUTION",
             institution_name="FinPay Indonesia",
         ),
