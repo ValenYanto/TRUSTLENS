@@ -34,50 +34,65 @@ export default function LoginPage() {
     }
 
     return (
-        <main className="min-h-screen bg-slate-950 text-slate-100">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top_left,_rgba(16,185,129,0.20),_transparent_35%),radial-gradient(circle_at_bottom_right,_rgba(59,130,246,0.16),_transparent_35%)]" />
+        <main className="relative min-h-screen overflow-hidden bg-[#050b18] text-slate-100">
+            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(21,184,255,0.16),_transparent_34%),linear-gradient(135deg,_rgba(21,184,255,0.06),_transparent_35%)]" />
+            <div className="absolute inset-0 trust-grid-bg opacity-40" />
 
-            <div className="relative flex min-h-screen items-center justify-center px-4">
-                <Card className="w-full max-w-md border-white/10 bg-slate-900/80 text-slate-100 shadow-2xl backdrop-blur">
-                    <CardHeader className="space-y-4 text-center">
-                        <div className="mx-auto flex h-14 w-14 items-center justify-center rounded-2xl bg-emerald-400/10 text-emerald-300">
-                            <ShieldCheck className="h-8 w-8" />
-                        </div>
-                        <div>
-                            <CardTitle className="text-3xl font-bold tracking-tight">
-                                TrustLens
+            <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
+                <div className="mb-8 text-center">
+                    <h1 className="text-4xl font-black tracking-tight text-cyan-400">
+                        TRUSTLENS
+                    </h1>
+                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.18em] text-emerald-300">
+                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                        Secure Protocol Active
+                    </div>
+                </div>
+
+                <Card className="w-full max-w-xl overflow-hidden rounded-sm border-cyan-300/10 bg-[#0b1220]/95 text-slate-100 shadow-2xl trust-glow">
+                    <CardHeader className="border-b border-white/10 bg-white/[0.04]">
+                        <div className="flex items-center justify-between">
+                            <CardTitle className="trust-label text-slate-300">
+                                System Authentication
                             </CardTitle>
-                            <CardDescription className="mt-2 text-slate-400">
-                                Real-time fraud intelligence dashboard
-                            </CardDescription>
+                            <span className="text-xs font-medium text-cyan-400">NODE_TX_4492</span>
                         </div>
                     </CardHeader>
 
-                    <CardContent>
-                        <form onSubmit={handleSubmit} className="space-y-5">
+                    <CardContent className="p-8">
+                        <div className="mb-8 rounded-sm border border-red-300/30 bg-red-400/10 p-5">
+                            <div className="flex gap-4">
+                                <ShieldCheck className="mt-1 h-6 w-6 text-red-200" />
+                                <div>
+                                    <h2 className="font-bold uppercase text-red-100">
+                                        Level 4 Security Clearance Required
+                                    </h2>
+                                    <p className="mt-2 text-sm leading-6 text-slate-300">
+                                        Unauthorized access attempts are logged and reported to the
+                                        TrustLens intelligence core.
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <form onSubmit={handleSubmit} className="space-y-6">
                             <div className="space-y-2">
-                                <Label htmlFor="email" className="text-slate-200">
-                                    Email
-                                </Label>
+                                <Label className="trust-label">Personnel System ID</Label>
                                 <Input
-                                    id="email"
                                     type="email"
                                     value={email}
-                                    className="border-white/10 bg-slate-950/70 text-slate-100"
+                                    className="h-14 rounded-sm border-white/10 bg-[#050b18] text-slate-100"
                                     onChange={(event) => setEmail(event.target.value)}
                                     required
                                 />
                             </div>
 
                             <div className="space-y-2">
-                                <Label htmlFor="password" className="text-slate-200">
-                                    Password
-                                </Label>
+                                <Label className="trust-label">Biometric Token Hash</Label>
                                 <Input
-                                    id="password"
                                     type="password"
                                     value={password}
-                                    className="border-white/10 bg-slate-950/70 text-slate-100"
+                                    className="h-14 rounded-sm border-white/10 bg-[#050b18] text-slate-100"
                                     onChange={(event) => setPassword(event.target.value)}
                                     required
                                 />
@@ -85,22 +100,19 @@ export default function LoginPage() {
 
                             <Button
                                 type="submit"
-                                className="w-full bg-emerald-500 text-slate-950 hover:bg-emerald-400"
+                                className="h-14 w-full rounded-sm bg-cyan-400 font-bold uppercase tracking-[0.18em] text-[#06111f] hover:bg-cyan-300"
                                 disabled={loading}
                             >
-                                {loading ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Signing in...
-                                    </>
-                                ) : (
-                                    "Sign in"
-                                )}
+                                {loading ? "Initializing..." : "Initialize Decryption"}
                             </Button>
 
-                            <p className="text-center text-xs text-slate-500">
-                                Demo account: valen@trustlens.dev / password123
-                            </p>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="h-12 w-full rounded-sm border-white/10 bg-transparent uppercase tracking-[0.18em] text-slate-400 hover:bg-white/5"
+                            >
+                                Emergency Access Bypass
+                            </Button>
                         </form>
                     </CardContent>
                 </Card>

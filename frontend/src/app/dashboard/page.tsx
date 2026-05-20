@@ -2,18 +2,19 @@
 
 import { useEffect, useState } from "react";
 import {
-    Activity,
-    AlertTriangle,
-    Ban,
-    Gauge,
-    Landmark,
+    AlertOctagon,
+    BarChart3,
+    DatabaseZap,
     Loader2,
-    ShieldAlert,
+    MoreVertical,
+    ShieldCheck,
+    ShieldOff,
+    Zap,
 } from "lucide-react";
 
 import { apiFetch } from "@/lib/api";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Card, CardContent } from "@/components/ui/card";
 
 type DashboardSummary = {
     total_transactions: number;
@@ -38,62 +39,28 @@ type DashboardSummary = {
     };
 };
 
-const cards = [
-    {
-        key: "total_transactions",
-        title: "Total Transactions",
-        icon: Activity,
-        suffix: "",
-    },
-    {
-        key: "total_alerts",
-        title: "Total Alerts",
-        icon: AlertTriangle,
-        suffix: "",
-    },
-    {
-        key: "high_risk_transactions",
-        title: "High Risk",
-        icon: ShieldAlert,
-        suffix: "",
-    },
-    {
-        key: "blocked_transactions",
-        title: "Blocked",
-        icon: Ban,
-        suffix: "",
-    },
-] as const;
-
 export default function DashboardPage() {
     const [summary, setSummary] = useState<DashboardSummary | null>(null);
     const [loading, setLoading] = useState(true);
 
-    async function loadSummary() {
-        try {
-            const data = await apiFetch<DashboardSummary>("/dashboard/summary");
-            setSummary(data);
-        } finally {
-            setLoading(false);
-        }
-    }
-
     useEffect(() => {
-        loadSummary();
+        apiFetch<DashboardSummary>("/dashboard/summary")
+            .then(setSummary)
+            .finally(() => setLoading(false));
     }, []);
 
     if (loading) {
         return (
-            <div className="flex min-h-[60vh] items-center justify-center text-slate-400">
-                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
-                Loading dashboard summary...
+            <div className="flex min-h-[70vh] items-center justify-center text-slate-400">
+                <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-300" />
+                Initializing Sentinel Core...
             </div>
         );
     }
 
     if (!summary) {
         return (
-            <div className="rounded-3xl border border-red-500/20 bg-red-500/10 p-6 text-red-200">
+            <div className="trust-panel rounded-xl p-6 text-red-200">
                 Failed to load dashboard summary. Make sure FastAPI backend is running.
             </div>
         );
@@ -101,127 +68,260 @@ export default function DashboardPage() {
 
     return (
         <div className="space-y-8">
-            <section className="overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-br from-emerald-400/10 via-slate-900 to-blue-500/10 p-6 shadow-2xl">
-                <div className="max-w-3xl">
-                    <Badge className="border-emerald-400/20 bg-emerald-400/10 text-emerald-300 hover:bg-emerald-400/10">
-                        TrustLens MVP
+            <section>
+                <div className="mb-4 flex items-center gap-2">
+                    <Badge className="rounded-sm bg-cyan-400/10 text-cyan-300 hover:bg-cyan-400/10">
+                        REAL-TIME STREAM
                     </Badge>
-                    <h2 className="mt-5 text-3xl font-bold tracking-tight text-slate-50 md:text-4xl">
-                        Real-time fraud intelligence for financial transactions.
-                    </h2>
-                    <p className="mt-4 text-sm leading-6 text-slate-400 md:text-base">
-                        Monitor fraud scores, detect high-risk patterns, analyze cross-border
-                        transaction behavior, and validate alerts through analyst labeling.
-                    </p>
+                    <span className="text-xs uppercase tracking-[0.22em] text-slate-600">
+                        / Ledger / Mainnet_01
+                    </span>
                 </div>
+
+                <h1 className="text-5xl font-black tracking-tight text-slate-100">
+                    DASHBOARD
+                </h1>
+                <p className="mt-3 max-w-3xl text-base leading-7 text-slate-400">
+                    Centralized threat monitoring for transaction fraud signals, high-risk
+                    alerts, cross-border anomalies, and analyst validation workflows.
+                </p>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                {cards.map((item) => {
-                    const Icon = item.icon;
-                    const value = summary[item.key];
+            <section className="grid gap-6 lg:grid-cols-3">
+                <MetricCard
+                    label="Global Risk Score"
+                    value={summary.average_fraud_score.toFixed(2)}
+                    icon={<ShieldOff className="h-9 w-9 text-slate-700" />}
+                    footer="System Status: Nominal"
+                    accent="cyan"
+                />
+                <MetricCard
+                    label="Live Transactions"
+                    value={summary.total_transactions.toLocaleString()}
+                    icon={<BarChart3 className="h-9 w-9 text-slate-700" />}
+                    footer="Synced from fraud engine"
+                    accent="blue"
+                />
+                <MetricCard
+                    label="Active Alerts"
+                    value={String(summary.open_alerts).padStart(2, "0")}
+                    icon={<AlertOctagon className="h-9 w-9 text-red-300" />}
+                    footer={`${summary.high_risk_transactions} high-risk vectors detected`}
+                    accent="red"
+                />
+            </section>
 
-                    return (
-                        <Card
-                            key={item.key}
-                            className="border-white/10 bg-slate-900/70 text-slate-100 shadow-xl"
-                        >
-                            <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-3">
-                                <CardTitle className="text-sm font-medium text-slate-400">
-                                    {item.title}
-                                </CardTitle>
-                                <div className="rounded-xl bg-emerald-400/10 p-2 text-emerald-300">
-                                    <Icon className="h-4 w-4" />
-                                </div>
-                            </CardHeader>
-                            <CardContent>
-                                <div className="text-3xl font-bold text-slate-50">{value}</div>
-                                <p className="mt-2 text-xs text-slate-500">
-                                    Synced from TrustLens backend
+            <section className="grid gap-8 xl:grid-cols-[1fr_330px]">
+                <Card className="trust-panel rounded-xl border-cyan-300/10 text-slate-100">
+                    <CardContent className="p-0">
+                        <div className="flex items-center justify-between border-b border-white/10 px-6 py-4">
+                            <div>
+                                <h2 className="text-xl font-bold">Live Activity Stream</h2>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    Fraud events and security decisions generated by TrustLens.
                                 </p>
-                            </CardContent>
-                        </Card>
-                    );
-                })}
-            </section>
-
-            <section className="grid gap-4 lg:grid-cols-3">
-                <Card className="border-white/10 bg-slate-900/70 text-slate-100 lg:col-span-2">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Gauge className="h-5 w-5 text-emerald-300" />
-                            Risk Distribution
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                        <RiskRow label="Low Risk" value={summary.risk_distribution.low} total={summary.total_transactions} />
-                        <RiskRow label="Medium Risk" value={summary.risk_distribution.medium} total={summary.total_transactions} />
-                        <RiskRow label="High Risk" value={summary.risk_distribution.high} total={summary.total_transactions} />
-                    </CardContent>
-                </Card>
-
-                <Card className="border-white/10 bg-slate-900/70 text-slate-100">
-                    <CardHeader>
-                        <CardTitle className="flex items-center gap-2 text-base">
-                            <Landmark className="h-5 w-5 text-emerald-300" />
-                            Intelligence Snapshot
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent className="space-y-5">
-                        <div>
-                            <p className="text-sm text-slate-400">Average Fraud Score</p>
-                            <p className="mt-1 text-3xl font-bold text-emerald-300">
-                                {summary.average_fraud_score}
-                            </p>
+                            </div>
+                            <div className="flex gap-4 text-xs uppercase tracking-[0.16em] text-slate-500">
+                                <span className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-emerald-400" />
+                                    Safe
+                                </span>
+                                <span className="flex items-center gap-2">
+                                    <span className="h-2 w-2 rounded-full bg-red-300" />
+                                    Critical
+                                </span>
+                            </div>
                         </div>
 
-                        <div className="grid grid-cols-2 gap-3">
-                            <MiniStat label="Accounts" value={summary.total_accounts} />
-                            <MiniStat label="Devices" value={summary.total_devices} />
-                            <MiniStat label="Merchants" value={summary.total_merchants} />
-                            <MiniStat label="Open Alerts" value={summary.open_alerts} />
+                        <div className="space-y-3 p-6">
+                            <ActivityRow
+                                variant="critical"
+                                title="Unexpected Cross-Border Outflow"
+                                badge="CRIMSON ALERT"
+                                description={`${summary.high_risk_transactions} high-risk transactions require analyst review.`}
+                                meta="REACTION REQUIRED"
+                            />
+                            <ActivityRow
+                                variant="safe"
+                                title="Handshake Successful"
+                                badge="VERIFIED"
+                                description={`${summary.status_distribution.approved} transactions approved by scoring engine.`}
+                                meta="NODE: TRUSTLENS-AI"
+                            />
+                            <ActivityRow
+                                variant="info"
+                                title="Graph Sync Available"
+                                badge="ROUTINE"
+                                description="Transaction relations can be synchronized into Neo4j for graph exploration."
+                                meta="GRAPH ENGINE READY"
+                            />
                         </div>
                     </CardContent>
                 </Card>
+
+                <div className="space-y-6">
+                    <Card className="trust-panel rounded-xl border-cyan-300/10 text-slate-100">
+                        <CardContent className="p-6">
+                            <div className="mb-6 flex items-center justify-between">
+                                <h3 className="font-bold uppercase tracking-wide text-slate-300">
+                                    Risk Distribution
+                                </h3>
+                                <DatabaseZap className="h-5 w-5 text-slate-500" />
+                            </div>
+
+                            <div className="space-y-5">
+                                <RiskBar
+                                    label="Low Risk"
+                                    value={summary.risk_distribution.low}
+                                    total={summary.total_transactions}
+                                    tone="emerald"
+                                />
+                                <RiskBar
+                                    label="Medium Risk"
+                                    value={summary.risk_distribution.medium}
+                                    total={summary.total_transactions}
+                                    tone="cyan"
+                                />
+                                <RiskBar
+                                    label="High Risk"
+                                    value={summary.risk_distribution.high}
+                                    total={summary.total_transactions}
+                                    tone="red"
+                                />
+                            </div>
+                        </CardContent>
+                    </Card>
+
+                    <Card className="trust-panel rounded-xl border-cyan-300/10 text-slate-100">
+                        <CardContent className="p-6">
+                            <h3 className="font-bold uppercase tracking-wide text-slate-300">
+                                Node Status Map
+                            </h3>
+
+                            <div className="mt-8 flex h-44 items-center justify-center rounded-xl border border-cyan-300/10 bg-[#080f1f]">
+                                <div className="flex h-20 w-20 items-center justify-center rounded-2xl border border-cyan-300/20 bg-cyan-400/10 text-cyan-300 trust-glow">
+                                    <ShieldCheck className="h-9 w-9" />
+                                </div>
+                            </div>
+
+                            <div className="mt-5 flex justify-between text-xs uppercase tracking-[0.16em] text-slate-500">
+                                <span>Active Nodes: {summary.total_devices}</span>
+                                <span>Offline: 0</span>
+                            </div>
+                        </CardContent>
+                    </Card>
+                </div>
             </section>
         </div>
     );
 }
 
-function RiskRow({
+function MetricCard({
+    label,
+    value,
+    icon,
+    footer,
+    accent,
+}: {
+    label: string;
+    value: string;
+    icon: React.ReactNode;
+    footer: string;
+    accent: "cyan" | "blue" | "red";
+}) {
+    const accentClass = {
+        cyan: "text-cyan-300",
+        blue: "text-blue-200",
+        red: "text-red-200",
+    }[accent];
+
+    return (
+        <Card className="trust-panel rounded-xl border-cyan-300/10 text-slate-100">
+            <CardContent className="p-6">
+                <div className="flex items-start justify-between">
+                    <div>
+                        <p className="trust-label">{label}</p>
+                        <p className={`mt-4 text-4xl font-black ${accentClass}`}>{value}</p>
+                    </div>
+                    {icon}
+                </div>
+                <div className="mt-5 h-1 rounded-full bg-slate-800">
+                    <div className="h-full w-2/3 rounded-full bg-cyan-300" />
+                </div>
+                <p className="mt-3 text-xs text-slate-500">{footer}</p>
+            </CardContent>
+        </Card>
+    );
+}
+
+function ActivityRow({
+    variant,
+    title,
+    badge,
+    description,
+    meta,
+}: {
+    variant: "critical" | "safe" | "info";
+    title: string;
+    badge: string;
+    description: string;
+    meta: string;
+}) {
+    const styles = {
+        critical: "border-l-red-300 bg-red-400/5",
+        safe: "border-l-emerald-400 bg-emerald-400/5",
+        info: "border-l-cyan-300 bg-cyan-400/5",
+    };
+
+    return (
+        <div className={`flex gap-4 border-l-4 p-4 ${styles[variant]}`}>
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-md bg-white/5">
+                <Zap className="h-5 w-5 text-cyan-300" />
+            </div>
+            <div className="flex-1">
+                <div className="flex flex-wrap items-center gap-3">
+                    <h3 className="font-bold text-slate-100">{title}</h3>
+                    <span className="rounded-sm bg-white/10 px-2 py-1 text-[10px] font-bold tracking-[0.14em] text-slate-300">
+                        {badge}
+                    </span>
+                </div>
+                <p className="mt-2 text-sm leading-6 text-slate-400">{description}</p>
+                <p className="mt-2 text-[10px] uppercase tracking-[0.18em] text-slate-600">
+                    {meta}
+                </p>
+            </div>
+            <MoreVertical className="h-5 w-5 text-slate-600" />
+        </div>
+    );
+}
+
+function RiskBar({
     label,
     value,
     total,
+    tone,
 }: {
     label: string;
     value: number;
     total: number;
+    tone: "emerald" | "cyan" | "red";
 }) {
     const percent = total > 0 ? Math.round((value / total) * 100) : 0;
+    const color = {
+        emerald: "bg-emerald-400",
+        cyan: "bg-cyan-300",
+        red: "bg-red-300",
+    }[tone];
 
     return (
         <div>
-            <div className="mb-2 flex items-center justify-between text-sm">
-                <span className="text-slate-300">{label}</span>
-                <span className="text-slate-500">
-                    {value} · {percent}%
-                </span>
+            <div className="mb-2 flex justify-between text-xs uppercase tracking-[0.14em]">
+                <span className="text-slate-500">{label}</span>
+                <span className="text-slate-300">{percent}%</span>
             </div>
-            <div className="h-2 overflow-hidden rounded-full bg-slate-800">
-                <div
-                    className="h-full rounded-full bg-emerald-400"
-                    style={{ width: `${percent}%` }}
-                />
+            <div className="h-2 rounded-full bg-[#050b18]">
+                <div className={`h-full rounded-full ${color}`} style={{ width: `${percent}%` }} />
             </div>
-        </div>
-    );
-}
-
-function MiniStat({ label, value }: { label: string; value: number }) {
-    return (
-        <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-            <p className="text-xs text-slate-500">{label}</p>
-            <p className="mt-1 text-xl font-semibold text-slate-100">{value}</p>
         </div>
     );
 }
