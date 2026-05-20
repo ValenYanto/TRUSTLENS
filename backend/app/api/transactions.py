@@ -18,6 +18,7 @@ from app.services.fraud_scoring import (
     get_risk_level,
     get_transaction_status,
 )
+from app.services.graph_sync import sync_transaction_to_graph
 
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
@@ -215,6 +216,10 @@ def create_transaction(
 
     db.commit()
     db.refresh(transaction)
+    try:
+        sync_transaction_to_graph(transaction)
+    except Exception as exc:
+        print(f"[Neo4j Sync Warning] {exc}")
 
     return TransactionCreateResponse(
         message="Transaction created and scored successfully",

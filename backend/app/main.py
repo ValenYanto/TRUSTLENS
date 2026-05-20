@@ -6,6 +6,7 @@ from app.api.dashboard import router as dashboard_router
 from app.api.transactions import router as transactions_router
 from app.api.alerts import router as alerts_router
 from app.api.audit_logs import router as audit_logs_router
+from app.api.graph import router as graph_router
 
 
 app = FastAPI(
@@ -44,3 +45,4 @@ app.include_router(dashboard_router, prefix="/api/v1")
 app.include_router(transactions_router, prefix="/api/v1")
 app.include_router(alerts_router, prefix="/api/v1")
 app.include_router(audit_logs_router, prefix="/api/v1")
+app.include_router(graph_router, prefix="/api/v1")
