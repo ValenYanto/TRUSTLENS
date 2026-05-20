@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: trustlens-postgres
+    restart: always
+    environment:
+      POSTGRES_DB: trustlens
+      POSTGRES_USER: trustlens
+      POSTGRES_PASSWORD: trustlens
+    ports:
+      - "5432:5432"
+    volumes:
+      - trustlens_postgres_data:/var/lib/postgresql/data
+
+  neo4j:
+    image: neo4j:5
+    container_name: trustlens-neo4j
+    restart: always
+    environment:
+      NEO4J_AUTH: neo4j/trustlens123
+    ports:
+      - "7474:7474"
+      - "7687:7687"
+    volumes:
+      - trustlens_neo4j_data:/data
+
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: trustlens-backend
+    restart: always
+    env_file:
+      - ./backend/.env
+    environment:
+      POSTGRES_HOST: postgres
+      NEO4J_URI: bolt://neo4j:7687
+    ports:
+      - "8000:8000"
+    depends_on:
+      - postgres
+      - neo4j
+
+volumes:
+  trustlens_postgres_data:
+  trustlens_neo4j_data:
