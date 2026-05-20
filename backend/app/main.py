@@ -9,7 +9,7 @@ from app.api.audit_logs import router as audit_logs_router
 from app.api.graph import router as graph_router
 from app.api.labels import router as labels_router
 from app.api.cross_border import router as cross_border_router
-
+from app.api.ml import router as ml_router
 app = FastAPI(
     title=settings.PROJECT_NAME,
     version=settings.API_VERSION,
@@ -49,3 +49,4 @@ app.include_router(audit_logs_router, prefix="/api/v1")
 app.include_router(graph_router, prefix="/api/v1")
 app.include_router(labels_router, prefix="/api/v1")
 app.include_router(cross_border_router, prefix="/api/v1")
+app.include_router(ml_router, prefix="/api/v1")

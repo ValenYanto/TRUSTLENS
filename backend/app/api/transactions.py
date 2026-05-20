@@ -19,6 +19,7 @@ from app.services.fraud_scoring import (
     get_transaction_status,
 )
 from app.services.graph_sync import sync_transaction_to_graph
+from app.ml.baseline_model import build_features_from_payload, score_with_baseline_model
 
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
@@ -164,6 +165,27 @@ def create_transaction(
         merchant=merchant,
     )
 
+    ml_features = build_features_from_payload(
+        amount=payload.amount,
+        channel=payload.channel,
+        source_country=payload.source_country,
+        destination_country=payload.destination_country,
+        sender_risk_level=sender_account.risk_level,
+        receiver_risk_level=receiver_account.risk_level,
+        device_risk_level=device.risk_level if device else "low",
+        device_is_blacklisted=device.is_blacklisted if device else False,
+        merchant_risk_level=merchant.risk_level if merchant else "low",
+        merchant_is_blacklisted=merchant.is_blacklisted if merchant else False,
+    )
+
+    ml_result = score_with_baseline_model(ml_features)
+
+    if ml_result.used_model:
+        fraud_score = round((fraud_score * 0.65) + (ml_result.ml_score * 0.35), 2)
+        reasons.append(f"ML baseline score contributed {ml_result.ml_score}")
+    else:
+        reasons.append("ML baseline model not trained yet; using rule-based score only")
+
     risk_level = get_risk_level(fraud_score)
     status = get_transaction_status(fraud_score)
 
@@ -229,6 +251,8 @@ def create_transaction(
         risk_level=transaction.risk_level,
         status=transaction.status,
         alert_created=alert_created,
+        ml_model_used=ml_result.used_model,
+        ml_score=ml_result.ml_score if ml_result.used_model else None,
     )
 
 
