@@ -1,80 +1,278 @@
-from sqlalchemy import func
+import uuid
+from uuid import UUID
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
-from fastapi import APIRouter, Depends
 
 from app.db.session import get_db
-from app.models.transaction import Transaction
-from app.models.alert import Alert
 from app.models.account import Account
+from app.models.alert import Alert
+from app.models.audit_log import AuditLog
 from app.models.device import Device
 from app.models.merchant import Merchant
+from app.models.transaction import Transaction
+from app.schemas.transaction import TransactionCreate, TransactionCreateResponse
+from app.services.fraud_scoring import (
+    calculate_fraud_score,
+    get_alert_severity,
+    get_risk_level,
+    get_transaction_status,
+)
 
 
-router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
+router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
 
-@router.get("/summary")
-def get_dashboard_summary(db: Session = Depends(get_db)):
-    total_transactions = db.query(Transaction).count()
-    total_accounts = db.query(Account).count()
-    total_devices = db.query(Device).count()
-    total_merchants = db.query(Merchant).count()
-
-    total_alerts = db.query(Alert).count()
-    open_alerts = db.query(Alert).filter(Alert.status == "open").count()
-    high_risk_transactions = db.query(Transaction).filter(Transaction.risk_level == "high").count()
-    blocked_transactions = db.query(Transaction).filter(Transaction.status == "blocked").count()
-
-    avg_fraud_score = db.query(func.avg(Transaction.fraud_score)).scalar() or 0
-
-    risk_distribution = {
-        "low": db.query(Transaction).filter(Transaction.risk_level == "low").count(),
-        "medium": db.query(Transaction).filter(Transaction.risk_level == "medium").count(),
-        "high": db.query(Transaction).filter(Transaction.risk_level == "high").count(),
-    }
-
-    status_distribution = {
-        "approved": db.query(Transaction).filter(Transaction.status == "approved").count(),
-        "flagged": db.query(Transaction).filter(Transaction.status == "flagged").count(),
-        "blocked": db.query(Transaction).filter(Transaction.status == "blocked").count(),
-        "pending": db.query(Transaction).filter(Transaction.status == "pending").count(),
-    }
-
+def serialize_transaction(transaction: Transaction):
     return {
-        "total_transactions": total_transactions,
-        "total_accounts": total_accounts,
-        "total_devices": total_devices,
-        "total_merchants": total_merchants,
-        "total_alerts": total_alerts,
-        "open_alerts": open_alerts,
-        "high_risk_transactions": high_risk_transactions,
-        "blocked_transactions": blocked_transactions,
-        "average_fraud_score": round(float(avg_fraud_score), 2),
-        "risk_distribution": risk_distribution,
-        "status_distribution": status_distribution,
+        "id": str(transaction.id),
+        "transaction_reference": transaction.transaction_reference,
+        "sender_account_id": str(transaction.sender_account_id),
+        "receiver_account_id": str(transaction.receiver_account_id),
+        "device_id": str(transaction.device_id) if transaction.device_id else None,
+        "merchant_id": str(transaction.merchant_id) if transaction.merchant_id else None,
+        "amount": transaction.amount,
+        "currency": transaction.currency,
+        "channel": transaction.channel,
+        "source_country": transaction.source_country,
+        "destination_country": transaction.destination_country,
+        "ip_address": transaction.ip_address,
+        "status": transaction.status,
+        "fraud_score": transaction.fraud_score,
+        "risk_level": transaction.risk_level,
+        "transaction_time": transaction.transaction_time,
+        "created_at": transaction.created_at,
+        "sender_account": {
+            "id": str(transaction.sender_account.id),
+            "account_number": transaction.sender_account.account_number,
+            "holder_name": transaction.sender_account.holder_name,
+            "risk_level": transaction.sender_account.risk_level,
+        }
+        if transaction.sender_account
+        else None,
+        "receiver_account": {
+            "id": str(transaction.receiver_account.id),
+            "account_number": transaction.receiver_account.account_number,
+            "holder_name": transaction.receiver_account.holder_name,
+            "risk_level": transaction.receiver_account.risk_level,
+        }
+        if transaction.receiver_account
+        else None,
+        "device": {
+            "id": str(transaction.device.id),
+            "device_fingerprint": transaction.device.device_fingerprint,
+            "device_type": transaction.device.device_type,
+            "os": transaction.device.os,
+            "browser": transaction.device.browser,
+            "ip_address": transaction.device.ip_address,
+            "risk_level": transaction.device.risk_level,
+            "is_blacklisted": transaction.device.is_blacklisted,
+        }
+        if transaction.device
+        else None,
+        "merchant": {
+            "id": str(transaction.merchant.id),
+            "name": transaction.merchant.name,
+            "category": transaction.merchant.category,
+            "country_code": transaction.merchant.country_code,
+            "risk_level": transaction.merchant.risk_level,
+            "is_blacklisted": transaction.merchant.is_blacklisted,
+        }
+        if transaction.merchant
+        else None,
     }
 
 
-@router.get("/recent-alerts")
-def get_recent_alerts(db: Session = Depends(get_db)):
-    alerts = (
-        db.query(Alert)
-        .order_by(Alert.created_at.desc())
-        .limit(10)
+@router.get("")
+def get_transactions(
+    db: Session = Depends(get_db),
+    limit: int = Query(default=20, ge=1, le=100),
+    offset: int = Query(default=0, ge=0),
+    risk_level: str | None = Query(default=None),
+    status: str | None = Query(default=None),
+):
+    query = db.query(Transaction)
+
+    if risk_level:
+        query = query.filter(Transaction.risk_level == risk_level)
+
+    if status:
+        query = query.filter(Transaction.status == status)
+
+    total = query.count()
+
+    transactions = (
+        query.order_by(Transaction.transaction_time.desc())
+        .offset(offset)
+        .limit(limit)
         .all()
     )
 
-    return [
-        {
-            "id": str(alert.id),
-            "transaction_id": str(alert.transaction_id),
-            "alert_type": alert.alert_type,
-            "severity": alert.severity,
-            "risk_score": alert.risk_score,
-            "reason": alert.reason,
-            "status": alert.status,
-            "assigned_to": alert.assigned_to,
-            "created_at": alert.created_at,
-        }
-        for alert in alerts
-    ]
+    return {
+        "total": total,
+        "limit": limit,
+        "offset": offset,
+        "items": [serialize_transaction(transaction) for transaction in transactions],
+    }
+
+
+@router.post("", response_model=TransactionCreateResponse)
+def create_transaction(
+    payload: TransactionCreate,
+    db: Session = Depends(get_db),
+):
+    sender_account = (
+        db.query(Account).filter(Account.id == payload.sender_account_id).first()
+    )
+
+    if not sender_account:
+        raise HTTPException(status_code=404, detail="Sender account not found")
+
+    receiver_account = (
+        db.query(Account).filter(Account.id == payload.receiver_account_id).first()
+    )
+
+    if not receiver_account:
+        raise HTTPException(status_code=404, detail="Receiver account not found")
+
+    if sender_account.id == receiver_account.id:
+        raise HTTPException(
+            status_code=400,
+            detail="Sender and receiver account cannot be the same",
+        )
+
+    device = None
+    if payload.device_id:
+        device = db.query(Device).filter(Device.id == payload.device_id).first()
+        if not device:
+            raise HTTPException(status_code=404, detail="Device not found")
+
+    merchant = None
+    if payload.merchant_id:
+        merchant = db.query(Merchant).filter(Merchant.id == payload.merchant_id).first()
+        if not merchant:
+            raise HTTPException(status_code=404, detail="Merchant not found")
+
+    fraud_score, reasons = calculate_fraud_score(
+        amount=payload.amount,
+        source_country=payload.source_country,
+        destination_country=payload.destination_country,
+        sender_account=sender_account,
+        receiver_account=receiver_account,
+        device=device,
+        merchant=merchant,
+    )
+
+    risk_level = get_risk_level(fraud_score)
+    status = get_transaction_status(fraud_score)
+
+    transaction = Transaction(
+        transaction_reference=f"TRX-{uuid.uuid4().hex[:12].upper()}",
+        sender_account_id=payload.sender_account_id,
+        receiver_account_id=payload.receiver_account_id,
+        device_id=payload.device_id,
+        merchant_id=payload.merchant_id,
+        amount=payload.amount,
+        currency=payload.currency,
+        channel=payload.channel,
+        source_country=payload.source_country,
+        destination_country=payload.destination_country,
+        ip_address=payload.ip_address or (device.ip_address if device else None),
+        status=status,
+        fraud_score=fraud_score,
+        risk_level=risk_level,
+    )
+
+    db.add(transaction)
+    db.flush()
+
+    alert_created = False
+
+    if fraud_score >= 0.50:
+        alert = Alert(
+            transaction_id=transaction.id,
+            alert_type="fraud_risk",
+            severity=get_alert_severity(fraud_score),
+            risk_score=fraud_score,
+            reason="; ".join(reasons),
+            status="open",
+            assigned_to=None,
+        )
+        db.add(alert)
+        alert_created = True
+
+    audit_log = AuditLog(
+        actor="system",
+        action="create_transaction",
+        entity_type="transaction",
+        entity_id=str(transaction.id),
+        description=(
+            f"Created transaction {transaction.transaction_reference} "
+            f"with fraud score {fraud_score} and risk level {risk_level}."
+        ),
+    )
+    db.add(audit_log)
+
+    db.commit()
+    db.refresh(transaction)
+
+    return TransactionCreateResponse(
+        message="Transaction created and scored successfully",
+        transaction_id=str(transaction.id),
+        transaction_reference=transaction.transaction_reference,
+        fraud_score=transaction.fraud_score,
+        risk_level=transaction.risk_level,
+        status=transaction.status,
+        alert_created=alert_created,
+    )
+
+
+@router.get("/demo/options")
+def get_demo_transaction_options(db: Session = Depends(get_db)):
+    accounts = db.query(Account).limit(10).all()
+    devices = db.query(Device).limit(10).all()
+    merchants = db.query(Merchant).limit(10).all()
+
+    return {
+        "accounts": [
+            {
+                "id": str(account.id),
+                "account_number": account.account_number,
+                "holder_name": account.holder_name,
+                "risk_level": account.risk_level,
+            }
+            for account in accounts
+        ],
+        "devices": [
+            {
+                "id": str(device.id),
+                "device_fingerprint": device.device_fingerprint,
+                "risk_level": device.risk_level,
+                "is_blacklisted": device.is_blacklisted,
+            }
+            for device in devices
+        ],
+        "merchants": [
+            {
+                "id": str(merchant.id),
+                "name": merchant.name,
+                "category": merchant.category,
+                "risk_level": merchant.risk_level,
+                "is_blacklisted": merchant.is_blacklisted,
+            }
+            for merchant in merchants
+        ],
+    }
+
+
+@router.get("/{transaction_id}")
+def get_transaction_detail(
+    transaction_id: UUID,
+    db: Session = Depends(get_db),
+):
+    transaction = db.query(Transaction).filter(Transaction.id == transaction_id).first()
+
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+
+    return serialize_transaction(transaction)
