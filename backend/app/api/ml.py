@@ -6,7 +6,10 @@ from app.ml.baseline_model import FraudBaselineModel, get_model_status
 from app.ml.registry.model_registry import get_active_metrics, list_model_artifacts
 from app.ml.training.train_paysim import train_paysim_logistic, train_paysim_xgboost
 from app.models.transaction import Transaction
-
+from app.ml.continual.adaptive_trainer import (
+    get_adaptive_learning_status,
+    run_adaptive_retraining,
+)
 
 router = APIRouter(prefix="/ml", tags=["Machine Learning"])
 
@@ -81,5 +84,22 @@ def train_paysim_model(
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
 
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    
+@router.get("/adaptive/status")
+def adaptive_learning_status(db: Session = Depends(get_db)):
+    return get_adaptive_learning_status(db)
+
+
+@router.post("/adaptive/retrain")
+def adaptive_retrain(
+    force: bool = Query(default=False),
+    db: Session = Depends(get_db),
+):
+    try:
+        return run_adaptive_retraining(db=db, force=force)
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

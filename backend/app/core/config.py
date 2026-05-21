@@ -19,6 +19,9 @@ class Settings(BaseSettings):
     JWT_ALGORITHM: str = "HS256"
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 1440
     
+    ADAPTIVE_RETRAIN_MIN_LABELS: int = 5
+    ADAPTIVE_RETRAIN_LIMIT_ROWS: int = 200000
+
     model_config = SettingsConfigDict(env_file=".env", env_file_encoding="utf-8")
 
     @property

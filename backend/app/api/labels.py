@@ -10,7 +10,7 @@ from app.models.audit_log import AuditLog
 from app.models.label import Label
 from app.models.transaction import Transaction
 from app.schemas.label import LabelCreate, LabelResponse
-
+from app.ml.continual.adaptive_trainer import get_adaptive_learning_status
 
 router = APIRouter(prefix="/labels", tags=["Labeling"])
 
@@ -134,13 +134,16 @@ def create_label(
     db.commit()
     db.refresh(label)
 
-    return LabelResponse(
-        message="Transaction labelled successfully",
-        label_id=str(label.id),
-        transaction_id=str(transaction.id),
-        label=label.label,
-        alert_updated=alert_updated,
-    )
+    adaptive_status = get_adaptive_learning_status(db)
+
+    return {
+        "message": "Label created successfully",
+        "label_id": str(label.id),
+        "transaction_id": str(transaction.id),
+        "label": label.label,
+        "alert_updated": alert_updated,
+        "adaptive_learning": adaptive_status,
+    }
 
 
 @router.get("/{label_id}")
