@@ -3,7 +3,7 @@ from typing import Any
 
 import pandas as pd
 
-from app.ml.registry.model_registry import load_active_model
+from app.ml.registry.model_registry import load_latest_model_by_dataset
 
 
 @dataclass
@@ -36,14 +36,6 @@ def build_paysim_like_features(
     merchant_risk_level: str = "low",
     merchant_is_blacklisted: bool = False,
 ) -> dict[str, Any]:
-    """
-    PaySim model expects PaySim-like columns.
-
-    TrustLens transaction schema does not have oldbalance/newbalance fields yet,
-    so we create proxy features. This is acceptable for MVP scoring integration,
-    while future versions should train on TrustLens-native schema or add balance history.
-    """
-
     risk_boost = 1.0
 
     if sender_risk_level == "high":
@@ -69,24 +61,27 @@ def build_paysim_like_features(
     if source_country != destination_country:
         risk_boost += 0.25
 
-    estimated_oldbalance_origin = max(amount * risk_boost, amount + 1)
-    estimated_newbalance_origin = max(estimated_oldbalance_origin - amount, 0)
+    estimated_oldbalance_origin = max(float(amount) * risk_boost, float(amount) + 1)
+    estimated_newbalance_origin = max(estimated_oldbalance_origin - float(amount), 0)
 
-    estimated_oldbalance_dest = max(amount * 0.15, 0)
-    estimated_newbalance_dest = estimated_oldbalance_dest + amount
+    estimated_oldbalance_dest = max(float(amount) * 0.15, 1)
+    estimated_newbalance_dest = estimated_oldbalance_dest + float(amount)
 
     origin_balance_delta = estimated_oldbalance_origin - estimated_newbalance_origin
     dest_balance_delta = estimated_newbalance_dest - estimated_oldbalance_dest
 
     amount_to_old_origin_balance_ratio = (
-        amount / estimated_oldbalance_origin if estimated_oldbalance_origin else 0
-    )
-    amount_to_old_dest_balance_ratio = (
-        amount / estimated_oldbalance_dest if estimated_oldbalance_dest else 0
+        float(amount) / estimated_oldbalance_origin
+        if estimated_oldbalance_origin
+        else 0
     )
 
-    # PaySim transaction types:
-    # CASH_OUT and TRANSFER are usually more fraud-sensitive.
+    amount_to_old_dest_balance_ratio = (
+        float(amount) / estimated_oldbalance_dest
+        if estimated_oldbalance_dest
+        else 0
+    )
+
     if channel in {"mobile_banking", "internet_banking"}:
         paysim_type = "TRANSFER"
     elif channel in {"payment_gateway", "e_wallet"}:
@@ -104,7 +99,7 @@ def build_paysim_like_features(
         "newbalanceOrig": float(estimated_newbalance_origin),
         "oldbalanceDest": float(estimated_oldbalance_dest),
         "newbalanceDest": float(estimated_newbalance_dest),
-        "isFlaggedFraud": int(amount >= 200_000_000),
+        "isFlaggedFraud": int(float(amount) >= 200_000_000),
         "origin_balance_delta": float(origin_balance_delta),
         "dest_balance_delta": float(dest_balance_delta),
         "amount_to_old_origin_balance_ratio": float(amount_to_old_origin_balance_ratio),
@@ -116,7 +111,11 @@ def build_paysim_like_features(
 
 
 def score_with_active_tabular_model(features: dict[str, Any]) -> TabularScoringResult:
-    artifact = load_active_model()
+    # IMPORTANT:
+    # Do not load active_tabular_model.joblib here, because internal adaptive training
+    # may overwrite the generic active model. PaySim scorer must load the latest
+    # PaySim artifact only.
+    artifact = load_latest_model_by_dataset("paysim")
 
     if artifact is None:
         return TabularScoringResult(
@@ -126,16 +125,17 @@ def score_with_active_tabular_model(features: dict[str, Any]) -> TabularScoringR
         )
 
     model = artifact["model"]
-    preprocessor = artifact["preprocessor"]
+    preprocessor = artifact.get("preprocessor")
 
     row = pd.DataFrame([features])
 
     if preprocessor is not None:
         row_processed = preprocessor.transform(row)
+        probability = float(model.predict_proba(row_processed)[:, 1][0])
     else:
-        row_processed = row
+        # Backward-compatible if artifact stores a full sklearn Pipeline.
+        probability = float(model.predict_proba(row)[:, 1][0])
 
-    probability = float(model.predict_proba(row_processed)[:, 1][0])
     probability = round(max(0.0, min(probability, 0.99)), 4)
 
     return TabularScoringResult(

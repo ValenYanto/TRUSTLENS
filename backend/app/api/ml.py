@@ -10,6 +10,7 @@ from app.ml.continual.adaptive_trainer import (
     get_adaptive_learning_status,
     run_adaptive_retraining,
 )
+from app.ml.training.train_trustlens import train_trustlens_adaptive_model
 
 router = APIRouter(prefix="/ml", tags=["Machine Learning"])
 
@@ -101,5 +102,24 @@ def adaptive_retrain(
         return run_adaptive_retraining(db=db, force=force)
     except FileNotFoundError as exc:
         raise HTTPException(status_code=404, detail=str(exc))
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+    
+@router.post("/train/trustlens")
+def train_trustlens_model(
+    min_samples: int = Query(default=10, ge=2),
+    db: Session = Depends(get_db),
+):
+    try:
+        result = train_trustlens_adaptive_model(
+            db=db,
+            min_samples=min_samples,
+        )
+
+        return {
+            "message": "TrustLens internal adaptive model trained successfully",
+            "result": result,
+        }
+
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))

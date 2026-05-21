@@ -19,10 +19,13 @@ from app.services.fraud_scoring import (
     get_transaction_status,
 )
 from app.services.graph_sync import sync_transaction_to_graph
-from app.ml.baseline_model import build_features_from_payload, score_with_baseline_model
 from app.ml.inference.tabular_scorer import (
     build_paysim_like_features,
     score_with_active_tabular_model,
+)
+from app.ml.inference.internal_scorer import (
+    build_trustlens_internal_features,
+    score_with_internal_adaptive_model,
 )
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
@@ -158,7 +161,7 @@ def create_transaction(
         if not merchant:
             raise HTTPException(status_code=404, detail="Merchant not found")
 
-    fraud_score, reasons = calculate_fraud_score(
+    rule_score, reasons = calculate_fraud_score(
         amount=payload.amount,
         source_country=payload.source_country,
         destination_country=payload.destination_country,
@@ -166,19 +169,6 @@ def create_transaction(
         receiver_account=receiver_account,
         device=device,
         merchant=merchant,
-    )
-
-    ml_features = build_features_from_payload(
-        amount=payload.amount,
-        channel=payload.channel,
-        source_country=payload.source_country,
-        destination_country=payload.destination_country,
-        sender_risk_level=sender_account.risk_level,
-        receiver_risk_level=receiver_account.risk_level,
-        device_risk_level=device.risk_level if device else "low",
-        device_is_blacklisted=device.is_blacklisted if device else False,
-        merchant_risk_level=merchant.risk_level if merchant else "low",
-        merchant_is_blacklisted=merchant.is_blacklisted if merchant else False,
     )
 
     tabular_features = build_paysim_like_features(
@@ -196,25 +186,55 @@ def create_transaction(
 
     tabular_result = score_with_active_tabular_model(tabular_features)
 
-    rule_score = fraud_score
+    preliminary_status = get_transaction_status(rule_score)
+
+    internal_features = build_trustlens_internal_features(
+        amount=payload.amount,
+        currency=payload.currency,
+        channel=payload.channel,
+        source_country=payload.source_country,
+        destination_country=payload.destination_country,
+        rule_fraud_score=rule_score,
+        transaction_status=preliminary_status,
+        sender_risk_level=sender_account.risk_level,
+        receiver_risk_level=receiver_account.risk_level,
+        device_risk_level=device.risk_level if device else "low",
+        device_is_blacklisted=device.is_blacklisted if device else False,
+        merchant_risk_level=merchant.risk_level if merchant else "low",
+        merchant_is_blacklisted=merchant.is_blacklisted if merchant else False,
+    )
+
+    internal_result = score_with_internal_adaptive_model(internal_features)
+
+    score_candidates = [rule_score]
+    weighted_parts = [rule_score * 0.50]
 
     if tabular_result.used_model:
-        blended_score = round(
-            (rule_score * 0.55) + (tabular_result.tabular_ml_score * 0.45),
-            2,
-        )
-
-        fraud_score = round(max(rule_score, blended_score), 2)
-
+        score_candidates.append(tabular_result.tabular_ml_score)
+        weighted_parts.append(tabular_result.tabular_ml_score * 0.30)
         reasons.append(
-            f"Trained PaySim XGBoost model contributed score {tabular_result.tabular_ml_score}"
-        )
-        reasons.append(
-            f"Final score selected using risk-aware ensemble: max(rule={rule_score}, blend={blended_score})"
+            f"PaySim XGBoost model contributed score {tabular_result.tabular_ml_score}"
         )
     else:
-        reasons.append("No active trained tabular model available; using rule-based score only")
-        
+        reasons.append("No active PaySim model available")
+
+    if internal_result.used_model:
+        score_candidates.append(internal_result.internal_ml_score)
+        weighted_parts.append(internal_result.internal_ml_score * 0.20)
+        reasons.append(
+            f"TrustLens internal adaptive model contributed score {internal_result.internal_ml_score}"
+        )
+    else:
+        reasons.append("No TrustLens internal adaptive model available")
+
+    blended_score = round(sum(weighted_parts), 2)
+
+    fraud_score = round(max(rule_score, blended_score, *score_candidates), 2)
+
+    reasons.append(
+        f"Final score selected using ensemble guard: max(rule={rule_score}, blend={blended_score})"
+    )
+
     risk_level = get_risk_level(fraud_score)
     status = get_transaction_status(fraud_score)
 
@@ -281,12 +301,18 @@ def create_transaction(
         status=transaction.status,
         alert_created=alert_created,
 
-        ml_model_used=tabular_result.used_model,
+        ml_model_used=tabular_result.used_model or internal_result.used_model,
         ml_score=tabular_result.tabular_ml_score if tabular_result.used_model else None,
 
         tabular_ml_model_used=tabular_result.used_model,
         tabular_ml_score=tabular_result.tabular_ml_score if tabular_result.used_model else None,
         tabular_model_version=tabular_result.model_version,
+
+        internal_ml_model_used=internal_result.used_model,
+        internal_ml_score=internal_result.internal_ml_score if internal_result.used_model else None,
+        internal_model_version=internal_result.model_version,
+
+        ensemble_mode="risk_aware_max_guard",
     )
 
 

@@ -3,18 +3,17 @@ from pydantic import BaseModel, Field
 
 
 class TransactionCreate(BaseModel):
-    sender_account_id: UUID
-    receiver_account_id: UUID
-    device_id: UUID | None = None
-    merchant_id: UUID | None = None
-
-    amount: float = Field(..., gt=0)
+    sender_account_id: str
+    receiver_account_id: str
+    device_id: str | None = None
+    merchant_id: str | None = None
+    amount: float
     currency: str = "IDR"
-    channel: str = "mobile_banking"
-
-    source_country: str = "ID"
-    destination_country: str = "ID"
+    channel: str
+    source_country: str
+    destination_country: str
     ip_address: str | None = None
+
 
 
 class TransactionCreateResponse(BaseModel):
@@ -32,3 +31,9 @@ class TransactionCreateResponse(BaseModel):
     tabular_ml_model_used: bool = False
     tabular_ml_score: float | None = None
     tabular_model_version: str | None = None
+
+    internal_ml_model_used: bool = False
+    internal_ml_score: float | None = None
+    internal_model_version: str | None = None
+
+    ensemble_mode: str | None = None
