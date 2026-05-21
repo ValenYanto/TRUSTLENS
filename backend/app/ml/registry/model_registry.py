@@ -1,0 +1,88 @@
+import json
+import os
+from datetime import datetime, timezone
+from pathlib import Path
+from typing import Any
+
+import joblib
+
+
+ARTIFACT_DIR = Path(__file__).resolve().parents[1] / "artifacts"
+ARTIFACT_DIR.mkdir(parents=True, exist_ok=True)
+
+ACTIVE_MODEL_PATH = ARTIFACT_DIR / "active_tabular_model.joblib"
+ACTIVE_METRICS_PATH = ARTIFACT_DIR / "active_tabular_metrics.json"
+
+
+def save_model_artifact(
+    model: Any,
+    preprocessor: Any,
+    metrics: dict[str, Any],
+    dataset_name: str,
+    model_name: str,
+) -> dict[str, Any]:
+    timestamp = datetime.now(timezone.utc).strftime("%Y%m%d_%H%M%S")
+    version = f"{dataset_name}_{model_name}_{timestamp}"
+
+    model_path = ARTIFACT_DIR / f"{version}.joblib"
+    metrics_path = ARTIFACT_DIR / f"{version}_metrics.json"
+
+    artifact = {
+        "model": model,
+        "preprocessor": preprocessor,
+        "dataset_name": dataset_name,
+        "model_name": model_name,
+        "version": version,
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+
+    joblib.dump(artifact, model_path)
+
+    metrics_payload = {
+        **metrics,
+        "dataset_name": dataset_name,
+        "model_name": model_name,
+        "version": version,
+        "model_path": str(model_path),
+        "created_at": artifact["created_at"],
+    }
+
+    with open(metrics_path, "w", encoding="utf-8") as file:
+        json.dump(metrics_payload, file, indent=2)
+
+    # Promote langsung sebagai active model untuk MVP.
+    joblib.dump(artifact, ACTIVE_MODEL_PATH)
+
+    with open(ACTIVE_METRICS_PATH, "w", encoding="utf-8") as file:
+        json.dump(metrics_payload, file, indent=2)
+
+    return metrics_payload
+
+
+def load_active_model() -> dict[str, Any] | None:
+    if not ACTIVE_MODEL_PATH.exists():
+        return None
+
+    return joblib.load(ACTIVE_MODEL_PATH)
+
+
+def get_active_metrics() -> dict[str, Any] | None:
+    if not ACTIVE_METRICS_PATH.exists():
+        return None
+
+    with open(ACTIVE_METRICS_PATH, "r", encoding="utf-8") as file:
+        return json.load(file)
+
+
+def list_model_artifacts() -> list[dict[str, Any]]:
+    metrics_files = sorted(ARTIFACT_DIR.glob("*_metrics.json"), reverse=True)
+    items: list[dict[str, Any]] = []
+
+    for path in metrics_files:
+        if path.name == ACTIVE_METRICS_PATH.name:
+            continue
+
+        with open(path, "r", encoding="utf-8") as file:
+            items.append(json.load(file))
+
+    return items

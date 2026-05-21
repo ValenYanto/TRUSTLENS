@@ -7,3 +7,11 @@ __pycache__/
 .pytest_cache/
 app/ml/artifacts/*.pkl
 backend/app/ml/artifacts/*.pkl
+backend/data/
+backend/app/ml/artifacts/*.pkl
+backend/app/ml/artifacts/*.joblib
+backend/app/ml/artifacts/*.pt
+backend/app/ml/artifacts/*.pth
+backend/app/ml/artifacts/*.onnx
+backend/app/ml/artifacts/*.json
+!backend/app/ml/artifacts/.gitkeep
