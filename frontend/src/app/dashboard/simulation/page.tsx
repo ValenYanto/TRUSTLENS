@@ -11,7 +11,7 @@ import {
     Loader2,
     Play,
     Radar,
-    ShieldAlert,
+    ShieldCheck,
     Sparkles,
     Zap,
 } from "lucide-react";
@@ -61,8 +61,13 @@ type SimulationResult = {
     risk_level: "low" | "medium" | "high";
     status: string;
     alert_created: boolean;
+
     ml_model_used: boolean;
     ml_score: number | null;
+
+    tabular_ml_model_used?: boolean;
+    tabular_ml_score?: number | null;
+    tabular_model_version?: string | null;
 };
 
 const channels = [
@@ -113,12 +118,21 @@ export default function SimulationPage() {
                 setOptions(data);
 
                 if (data.accounts.length >= 2) {
-                    setValue("sender_account_id", data.accounts[0].id);
-                    setValue("receiver_account_id", data.accounts[1].id);
+                    const defaultSender =
+                        data.accounts.find((account) => account.risk_level === "low") ||
+                        data.accounts[0];
+
+                    const defaultReceiver =
+                        data.accounts.find((account) => account.risk_level === "high") ||
+                        data.accounts[1];
+
+                    setValue("sender_account_id", defaultSender.id);
+                    setValue("receiver_account_id", defaultReceiver.id);
                 }
 
                 const highRiskDevice =
                     data.devices.find((device) => device.is_blacklisted) || data.devices[0];
+
                 const highRiskMerchant =
                     data.merchants.find((merchant) => merchant.risk_level === "high") ||
                     data.merchants[0];
@@ -197,13 +211,13 @@ export default function SimulationPage() {
                     </h1>
                     <p className="mt-3 max-w-3xl text-base leading-7 text-slate-400">
                         Inject a synthetic transaction into TrustLens. The backend will score
-                        it using the rule engine and ML baseline, then create an alert when
-                        risk exceeds threshold.
+                        it using a risk-aware ensemble: business rule guard plus the trained
+                        PaySim XGBoost fraud model.
                     </p>
                 </div>
 
                 <div className="trust-panel-soft rounded-md px-5 py-4">
-                    <p className="trust-label">Preview Risk Vector</p>
+                    <p className="trust-label">Preview Rule Vector</p>
                     <p className="mt-2 text-3xl font-black text-cyan-300">{previewRisk}</p>
                 </div>
             </section>
@@ -370,16 +384,21 @@ export default function SimulationPage() {
                                 <div>
                                     <p className="trust-label">Engine Stack</p>
                                     <h3 className="mt-3 text-2xl font-black text-slate-100">
-                                        Hybrid Scoring
+                                        Risk-Aware Ensemble
                                     </h3>
                                 </div>
                                 <Cpu className="h-8 w-8 text-cyan-300" />
                             </div>
 
                             <div className="mt-6 space-y-3">
-                                <EngineRow icon={<Zap />} label="Rule Engine" value="65%" />
-                                <EngineRow icon={<Bot />} label="ML Baseline" value="35%" />
-                                <EngineRow icon={<Sparkles />} label="Alert Threshold" value="≥ 50" />
+                                <EngineRow icon={<Zap />} label="Rule Engine" value="Risk Guard" />
+                                <EngineRow icon={<Bot />} label="PaySim XGBoost" value="Active Model" />
+                                <EngineRow icon={<Sparkles />} label="Ensemble Mode" value="Max Guard" />
+                            </div>
+
+                            <div className="mt-5 rounded-sm border border-cyan-300/10 bg-cyan-400/5 p-4 text-sm leading-6 text-slate-400">
+                                The trained PaySim model contributes probability, while rule-based
+                                red flags remain protected to prevent domain mismatch suppression.
                             </div>
                         </CardContent>
                     </Card>
@@ -502,12 +521,21 @@ function ResultPanel({
                 <ResultRow label="Reference" value={result.transaction_reference} mono />
                 <ResultRow label="Amount" value={formatCurrency(amount)} />
                 <ResultRow
-                    label="ML Model"
-                    value={result.ml_model_used ? "ACTIVE" : "NOT TRAINED"}
+                    label="Trained ML"
+                    value={result.tabular_ml_model_used ? "PAYSIM XGBOOST ACTIVE" : "NOT ACTIVE"}
                 />
                 <ResultRow
-                    label="ML Score"
-                    value={result.ml_score !== null ? String(result.ml_score) : "-"}
+                    label="Tabular ML Score"
+                    value={
+                        result.tabular_ml_score !== null && result.tabular_ml_score !== undefined
+                            ? String(result.tabular_ml_score)
+                            : "-"
+                    }
+                    mono
+                />
+                <ResultRow
+                    label="Model Version"
+                    value={result.tabular_model_version || "-"}
                     mono
                 />
                 <ResultRow
@@ -529,9 +557,14 @@ function ResultRow({
     mono?: boolean;
 }) {
     return (
-        <div className="flex items-center justify-between rounded-sm border border-white/10 bg-[#050b18] px-4 py-3">
-            <span className="trust-label">{label}</span>
-            <span className={cn("text-sm text-slate-200", mono && "trust-mono")}>
+        <div className="flex items-center justify-between gap-4 rounded-sm border border-white/10 bg-[#050b18] px-4 py-3">
+            <span className="trust-label shrink-0">{label}</span>
+            <span
+                className={cn(
+                    "break-all text-right text-sm text-slate-200",
+                    mono && "trust-mono"
+                )}
+            >
                 {value}
             </span>
         </div>

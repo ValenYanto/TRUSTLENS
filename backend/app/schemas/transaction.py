@@ -25,5 +25,10 @@ class TransactionCreateResponse(BaseModel):
     risk_level: str
     status: str
     alert_created: bool
+
     ml_model_used: bool = False
     ml_score: float | None = None
+
+    tabular_ml_model_used: bool = False
+    tabular_ml_score: float | None = None
+    tabular_model_version: str | None = None

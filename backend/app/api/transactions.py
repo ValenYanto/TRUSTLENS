@@ -20,7 +20,10 @@ from app.services.fraud_scoring import (
 )
 from app.services.graph_sync import sync_transaction_to_graph
 from app.ml.baseline_model import build_features_from_payload, score_with_baseline_model
-
+from app.ml.inference.tabular_scorer import (
+    build_paysim_like_features,
+    score_with_active_tabular_model,
+)
 
 router = APIRouter(prefix="/transactions", tags=["Transactions"])
 
@@ -178,14 +181,40 @@ def create_transaction(
         merchant_is_blacklisted=merchant.is_blacklisted if merchant else False,
     )
 
-    ml_result = score_with_baseline_model(ml_features)
+    tabular_features = build_paysim_like_features(
+        amount=payload.amount,
+        channel=payload.channel,
+        source_country=payload.source_country,
+        destination_country=payload.destination_country,
+        sender_risk_level=sender_account.risk_level,
+        receiver_risk_level=receiver_account.risk_level,
+        device_risk_level=device.risk_level if device else "low",
+        device_is_blacklisted=device.is_blacklisted if device else False,
+        merchant_risk_level=merchant.risk_level if merchant else "low",
+        merchant_is_blacklisted=merchant.is_blacklisted if merchant else False,
+    )
 
-    if ml_result.used_model:
-        fraud_score = round((fraud_score * 0.65) + (ml_result.ml_score * 0.35), 2)
-        reasons.append(f"ML baseline score contributed {ml_result.ml_score}")
+    tabular_result = score_with_active_tabular_model(tabular_features)
+
+    rule_score = fraud_score
+
+    if tabular_result.used_model:
+        blended_score = round(
+            (rule_score * 0.55) + (tabular_result.tabular_ml_score * 0.45),
+            2,
+        )
+
+        fraud_score = round(max(rule_score, blended_score), 2)
+
+        reasons.append(
+            f"Trained PaySim XGBoost model contributed score {tabular_result.tabular_ml_score}"
+        )
+        reasons.append(
+            f"Final score selected using risk-aware ensemble: max(rule={rule_score}, blend={blended_score})"
+        )
     else:
-        reasons.append("ML baseline model not trained yet; using rule-based score only")
-
+        reasons.append("No active trained tabular model available; using rule-based score only")
+        
     risk_level = get_risk_level(fraud_score)
     status = get_transaction_status(fraud_score)
 
@@ -251,8 +280,13 @@ def create_transaction(
         risk_level=transaction.risk_level,
         status=transaction.status,
         alert_created=alert_created,
-        ml_model_used=ml_result.used_model,
-        ml_score=ml_result.ml_score if ml_result.used_model else None,
+
+        ml_model_used=tabular_result.used_model,
+        ml_score=tabular_result.tabular_ml_score if tabular_result.used_model else None,
+
+        tabular_ml_model_used=tabular_result.used_model,
+        tabular_ml_score=tabular_result.tabular_ml_score if tabular_result.used_model else None,
+        tabular_model_version=tabular_result.model_version,
     )
 
 
