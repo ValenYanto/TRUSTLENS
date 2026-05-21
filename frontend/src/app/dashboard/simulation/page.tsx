@@ -68,6 +68,12 @@ type SimulationResult = {
     tabular_ml_model_used?: boolean;
     tabular_ml_score?: number | null;
     tabular_model_version?: string | null;
+
+    internal_ml_model_used?: boolean;
+    internal_ml_score?: number | null;
+    internal_model_version?: string | null;
+
+    ensemble_mode?: string | null;
 };
 
 const channels = [
@@ -534,6 +540,29 @@ function ResultPanel({
                     mono
                 />
                 <ResultRow
+                    label="Internal Adaptive"
+                    value={result.internal_ml_model_used ? "Active" : "Not Active"}
+                />
+                <ResultRow
+                    label="Internal ML Score"
+                    value={
+                        result.internal_ml_score !== null && result.internal_ml_score !== undefined
+                            ? String(result.internal_ml_score)
+                            : "-"
+                    }
+                    mono
+                />
+                <ResultRow
+                    label="Internal Version"
+                    value={compactInternalModelVersion(result.internal_model_version)}
+                    mono
+                />
+                <ResultRow
+                    label="Ensemble Mode"
+                    value={result.ensemble_mode || "-"}
+                    mono
+                />
+                <ResultRow
                     label="Model Version"
                     value={result.tabular_model_version || "-"}
                     mono
@@ -545,6 +574,11 @@ function ResultPanel({
             </div>
         </div>
     );
+}
+
+function compactInternalModelVersion(value?: string | null) {
+    if (!value) return "-";
+    return value.replace("trustlens_internal_adaptive_random_forest_", "tl_rf_");
 }
 
 function ResultRow({

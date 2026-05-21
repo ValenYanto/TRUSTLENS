@@ -17,6 +17,7 @@ import {
     Network,
     Search,
     Settings,
+    BrainCircuit,
     Shield,
     Tags,
     UserRound,
@@ -40,6 +41,7 @@ const sideNav = [
     { title: "Simulation", href: "/dashboard/simulation", icon: FlaskConical },
     { title: "Risk Map", href: "/dashboard/cross-border", icon: Map },
     { title: "Audit Log", href: "/dashboard/audit-logs", icon: History },
+    { title: "ML Monitor", href: "/dashboard/ml", icon: BrainCircuit },
 ];
 
 export function DashboardShell({ children }: { children: React.ReactNode }) {
