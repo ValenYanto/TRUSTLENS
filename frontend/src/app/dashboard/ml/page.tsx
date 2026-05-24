@@ -115,9 +115,9 @@ export default function MlMonitorPage() {
             setMlStatus(statusData);
             setMlMetrics(metricsData);
             setAdaptiveStatus(adaptiveData);
-            setModels(modelsData.items);
+            setModels(modelsData.items ?? []);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to load ML monitor");
+            toast.error(error instanceof Error ? error.message : "Gagal memuat Monitor AI");
         } finally {
             setLoading(false);
         }
@@ -134,7 +134,7 @@ export default function MlMonitorPage() {
             toast.success("PaySim XGBoost model trained successfully");
             await loadData();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to train PaySim model");
+            toast.error(error instanceof Error ? error.message : "Gagal melatih model PaySim");
         } finally {
             setTrainingAction(null);
         }
@@ -154,7 +154,7 @@ export default function MlMonitorPage() {
             toast.error(
                 error instanceof Error
                     ? error.message
-                    : "Failed to train TrustLens internal model"
+                    : "Gagal melatih model adaptif TrustLens"
             );
         } finally {
             setTrainingAction(null);
@@ -185,10 +185,17 @@ export default function MlMonitorPage() {
     }
 
     useEffect(() => {
-        loadData();
+        const timer = window.setTimeout(() => {
+            loadData();
+        }, 0);
+
+        return () => window.clearTimeout(timer);
     }, []);
 
     const activeModel = mlMetrics?.active_model || mlStatus?.active_tabular_model || null;
+    const internalModel = models.find(
+        (model) => model.dataset_name === "trustlens_internal"
+    );
 
     const readinessPercent = useMemo(() => {
         if (!adaptiveStatus) return 0;
@@ -211,7 +218,7 @@ export default function MlMonitorPage() {
         return (
             <div className="flex min-h-[70vh] items-center justify-center text-slate-400">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-300" />
-                Loading ML intelligence core...
+                Memuat monitor AI...
             </div>
         );
     }
@@ -222,20 +229,18 @@ export default function MlMonitorPage() {
                 <div>
                     <div className="mb-4 flex items-center gap-2">
                         <Badge className="rounded-sm bg-cyan-400/10 text-cyan-300 hover:bg-cyan-400/10">
-                            AI CORE
+                            Operasional model
                         </Badge>
                         <span className="text-xs uppercase tracking-[0.14em] text-slate-600">
-                            / Model Registry / Adaptive Learning
+                            / PaySim / Pembelajaran adaptif / Prototype graph
                         </span>
                     </div>
 
                     <h1 className="text-5xl font-black tracking-tight text-slate-100">
-                        ML MONITOR
+                        Monitor AI
                     </h1>
                     <p className="mt-3 max-w-3xl text-base leading-7 text-slate-400">
-                        Monitor TrustLens AI models trained from public fraud datasets and
-                        analyst-labelled internal transactions. Track metrics, adaptive
-                        readiness, and model versions used in fraud scoring.
+                        Pantau performa model AI TrustLens, kesiapan retraining, dan versi model yang digunakan dalam scoring fraud.
                     </p>
                 </div>
 
@@ -245,7 +250,7 @@ export default function MlMonitorPage() {
                     className="rounded-sm border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                 >
                     <RefreshCcw className="mr-2 h-4 w-4" />
-                    Refresh Monitor
+                    Muat ulang
                 </Button>
             </section>
 
@@ -278,11 +283,10 @@ export default function MlMonitorPage() {
                         <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
                             <div>
                                 <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
-                                    Active Public Fraud Model
+                                    Model Tabular Publik: PaySim XGBoost
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    PaySim XGBoost public benchmark model used as tabular fraud
-                                    signal.
+                                    Model benchmark publik PaySim XGBoost sebagai sinyal fraud tabular.
                                 </p>
                             </div>
                             <DatabaseZap className="h-5 w-5 text-cyan-300" />
@@ -290,21 +294,21 @@ export default function MlMonitorPage() {
 
                         {!activeModel ? (
                             <div className="p-8 text-sm text-slate-500">
-                                No active tabular model available yet. Train PaySim XGBoost first.
+                                Belum ada model tabular aktif. Latih PaySim XGBoost terlebih dahulu.
                             </div>
                         ) : (
                             <div className="grid gap-5 p-6 md:grid-cols-2">
                                 <InfoBox label="Dataset" value={activeModel.dataset_name || "-"} />
                                 <InfoBox label="Model" value={activeModel.model_name || "-"} />
-                                <InfoBox label="Model Family" value={activeModel.model_family || "-"} />
-                                <InfoBox label="Version" value={compactVersion(activeModel.version)} mono />
+                                <InfoBox label="Keluarga model" value={activeModel.model_family || "-"} />
+                                <InfoBox label="Versi" value={compactVersi(activeModel.version)} mono />
                                 <InfoBox
-                                    label="Dataset Rows"
+                                    label="Jumlah data"
                                     value={String(activeModel.dataset_rows ?? "-")}
                                     mono
                                 />
                                 <InfoBox
-                                    label="Fraud Ratio"
+                                    label="Rasio fraud"
                                     value={
                                         activeModel.fraud_ratio !== undefined
                                             ? `${(activeModel.fraud_ratio * 100).toFixed(4)}%`
@@ -312,13 +316,18 @@ export default function MlMonitorPage() {
                                     }
                                     mono
                                 />
+                                <InfoBox label="ROC-AUC" value={formatMetric(activeModel.roc_auc)} mono />
+                                <InfoBox label="PR-AUC" value={formatMetric(activeModel.pr_auc)} mono />
+                                <InfoBox label="Presisi" value={formatMetric(activeModel.precision)} mono />
+                                <InfoBox label="Recall" value={formatMetric(activeModel.recall)} mono />
+                                <InfoBox label="F1" value={formatMetric(activeModel.f1)} mono />
                                 <InfoBox
-                                    label="False Positive Rate"
+                                    label="FPR"
                                     value={formatMetric(activeModel.false_positive_rate)}
                                     mono
                                 />
                                 <InfoBox
-                                    label="False Negative Rate"
+                                    label="FNR"
                                     value={formatMetric(activeModel.false_negative_rate)}
                                     mono
                                 />
@@ -331,9 +340,9 @@ export default function MlMonitorPage() {
                     <CardContent className="p-6">
                         <div className="flex items-start justify-between">
                             <div>
-                                <p className="trust-label">Adaptive Learning</p>
+                                <p className="trust-label">Pembelajaran adaptif</p>
                                 <h3 className="mt-3 text-2xl font-black text-slate-100">
-                                    {adaptiveStatus?.ready_for_retraining ? "Ready" : "Collecting Labels"}
+                                    {adaptiveStatus?.ready_for_retraining ? "Siap" : "Mengumpulkan label"}
                                 </h3>
                             </div>
 
@@ -346,7 +355,7 @@ export default function MlMonitorPage() {
 
                         <div className="mt-6">
                             <div className="mb-2 flex items-center justify-between text-sm">
-                                <span className="text-slate-400">New labels</span>
+                                <span className="text-slate-400">Label baru</span>
                                 <span className="trust-mono text-slate-300">
                                     {adaptiveStatus?.new_labels_since_last_training ?? 0}/
                                     {adaptiveStatus?.min_labels_required ?? 0}
@@ -361,7 +370,7 @@ export default function MlMonitorPage() {
                             </div>
 
                             <p className="mt-4 text-sm leading-6 text-slate-500">
-                                Recommended action:{" "}
+                                Rekomendasi aksi:{" "}
                                 <span className="text-cyan-300">
                                     {adaptiveStatus?.recommended_action || "-"}
                                 </span>
@@ -379,7 +388,7 @@ export default function MlMonitorPage() {
                                 ) : (
                                     <Zap className="mr-2 h-4 w-4" />
                                 )}
-                                Adaptive Retrain
+                                Retrain adaptif
                             </Button>
 
                             <Button
@@ -388,7 +397,7 @@ export default function MlMonitorPage() {
                                 variant="outline"
                                 className="h-11 w-full rounded-sm border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                             >
-                                Force Retrain
+                                Paksa retrain
                             </Button>
                         </div>
                     </CardContent>
@@ -398,7 +407,7 @@ export default function MlMonitorPage() {
             <section className="grid gap-8 xl:grid-cols-[390px_1fr]">
                 <Card className="trust-panel rounded-md border-cyan-300/10 text-slate-100">
                     <CardContent className="p-6">
-                        <p className="trust-label">Training Controls</p>
+                        <p className="trust-label">Kontrol training</p>
 
                         <div className="mt-6 space-y-3">
                             <Button
@@ -411,7 +420,7 @@ export default function MlMonitorPage() {
                                 ) : (
                                     <DatabaseZap className="mr-2 h-4 w-4" />
                                 )}
-                                Train PaySim XGBoost
+                                Latih PaySim XGBoost
                             </Button>
 
                             <Button
@@ -425,13 +434,12 @@ export default function MlMonitorPage() {
                                 ) : (
                                     <GitBranch className="mr-2 h-4 w-4" />
                                 )}
-                                Train Internal Adaptive
+                                Train Model adaptif
                             </Button>
                         </div>
 
                         <div className="mt-6 rounded-sm border border-cyan-300/10 bg-cyan-400/5 p-4 text-sm leading-6 text-slate-400">
-                            PaySim XGBoost is trained from a public fraud dataset. Internal
-                            adaptive model is trained from analyst labels inside TrustLens.
+                            PaySim XGBoost dilatih dari dataset fraud publik. Model adaptif internal dilatih dari label analyst di TrustLens.
                         </div>
                     </CardContent>
                 </Card>
@@ -441,10 +449,10 @@ export default function MlMonitorPage() {
                         <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
                             <div>
                                 <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
-                                    Confusion Matrix
+                                    Confusion matrix
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Current active public fraud model evaluation.
+                                    Evaluasi model publik aktif.
                                 </p>
                             </div>
                             <BrainCircuit className="h-5 w-5 text-cyan-300" />
@@ -483,15 +491,73 @@ export default function MlMonitorPage() {
             </section>
 
             <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
+                <Card className="trust-panel overflow-hidden rounded-md border-emerald-300/10 text-slate-100">
+                    <CardContent className="p-0">
+                        <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
+                            <div>
+                                <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
+                                    Model Adaptif TrustLens: RandomForest
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    Model dari label analyst sebagai sinyal adaptif lokal.
+                                </p>
+                            </div>
+                            <GitBranch className="h-5 w-5 text-emerald-300" />
+                        </div>
+
+                        {!internalModel ? (
+                            <div className="p-8 text-sm text-slate-500">
+                                Belum ada artifact model adaptif TrustLens.
+                            </div>
+                        ) : (
+                            <div className="grid gap-5 p-6 md:grid-cols-2">
+                                <InfoBox label="Dataset" value={internalModel.dataset_name || "-"} />
+                                <InfoBox label="Model" value={internalModel.model_name || "-"} />
+                                <InfoBox label="Versi" value={compactVersi(internalModel.version)} mono />
+                                <InfoBox label="Jumlah data" value={String(internalModel.dataset_rows ?? "-")} mono />
+                                <InfoBox label="Jumlah fraud" value={String(internalModel.fraud_count ?? "-")} mono />
+                                <InfoBox label="Jumlah sah" value={String(internalModel.legitimate_count ?? "-")} mono />
+                                <InfoBox label="ROC-AUC" value={formatMetric(internalModel.roc_auc)} mono />
+                                <InfoBox label="PR-AUC" value={formatMetric(internalModel.pr_auc)} mono />
+                                <InfoBox label="Presisi" value={formatMetric(internalModel.precision)} mono />
+                                <InfoBox label="Recall" value={formatMetric(internalModel.recall)} mono />
+                                <InfoBox label="F1" value={formatMetric(internalModel.f1)} mono />
+                            </div>
+                        )}
+
+                        {internalModel?.warning && (
+                            <div className="mx-6 mb-6 rounded-sm border border-orange-300/20 bg-orange-400/10 p-4 text-sm leading-6 text-orange-100">
+                                {internalModel.warning}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card className="trust-panel rounded-md border-emerald-300/10 text-slate-100">
+                    <CardContent className="p-6">
+                        <p className="trust-label">Peran model adaptif</p>
+
+                        <div className="mt-6 space-y-3">
+                            <InfoBox label="Jenis sinyal" value="Model adaptif dari human-in-the-loop" />
+                            <InfoBox label="Sumber training" value="Transaksi PostgreSQL + label analyst" />
+                            <InfoBox
+                                label="Peran dalam MVP"
+                                value="Sinyal pendukung; rule guard tetap menjaga red flag kuat"
+                            />
+                        </div>
+                    </CardContent>
+                </Card>
+            </section>
+            <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
                 <Card className="trust-panel overflow-hidden rounded-md border-cyan-300/10 text-slate-100">
                     <CardContent className="p-0">
                         <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
                             <div>
                                 <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
-                                    Graph ML Prototype
+                                    Prototype Graph Learning: Elliptic GraphSAGE
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Elliptic GraphSAGE model for graph-based fraud learning evidence.
+                                    Prototype GraphSAGE untuk bukti pembelajaran graph.
                                 </p>
                             </div>
                             <GitBranch className="h-5 w-5 text-cyan-300" />
@@ -499,20 +565,21 @@ export default function MlMonitorPage() {
 
                         {!graphModel ? (
                             <div className="p-8 text-sm text-slate-500">
-                                No GraphSAGE artifact found yet. Train Elliptic GraphSAGE from backend first.
+                                Belum ada artifact GraphSAGE. Latih prototype Elliptic GraphSAGE dari backend.
                             </div>
                         ) : (
                             <div className="grid gap-5 p-6 md:grid-cols-2">
                                 <InfoBox label="Dataset" value={graphModel.dataset_name || "-"} />
                                 <InfoBox label="Model" value={graphModel.model_name || "-"} />
-                                <InfoBox label="Model Family" value={graphModel.model_family || "-"} />
-                                <InfoBox label="Version" value={compactVersion(graphModel.version)} mono />
-                                <InfoBox label="Graph Nodes" value={String(graphModel.graph_nodes ?? "-")} mono />
-                                <InfoBox label="Graph Edges" value={String(graphModel.graph_edges ?? "-")} mono />
+                                <InfoBox label="Keluarga model" value={graphModel.model_family || "-"} />
+                                <InfoBox label="Versi" value={compactVersi(graphModel.version)} mono />
+                                <InfoBox label="Node relasi" value={String(graphModel.graph_nodes ?? "-")} mono />
+                                <InfoBox label="Edge relasi" value={String(graphModel.graph_edges ?? "-")} mono />
+                                <InfoBox label="Node berlabel" value={String(graphModel.labelled_count ?? "-")} mono />
                                 <InfoBox label="ROC-AUC" value={formatMetric(graphModel.roc_auc)} mono />
                                 <InfoBox label="PR-AUC" value={formatMetric(graphModel.pr_auc)} mono />
-                                <InfoBox label="Illicit Recall" value={formatMetric(graphModel.recall)} mono />
-                                <InfoBox label="Illicit F1" value={formatMetric(graphModel.f1)} mono />
+                                <InfoBox label="Recall" value={formatMetric(graphModel.recall)} mono />
+                                <InfoBox label="F1" value={formatMetric(graphModel.f1)} mono />
                             </div>
                         )}
 
@@ -526,33 +593,32 @@ export default function MlMonitorPage() {
 
                 <Card className="trust-panel rounded-md border-cyan-300/10 text-slate-100">
                     <CardContent className="p-6">
-                        <p className="trust-label">Graph Learning Status</p>
+                        <p className="trust-label">Status graph learning</p>
 
                         <div className="mt-6 space-y-3">
                             <InfoBox
-                                label="Architecture"
+                                label="Arsitektur"
                                 value="Manual PyTorch GraphSAGE"
                             />
                             <InfoBox
-                                label="Training Epochs"
+                                label="Epoch training"
                                 value={String(graphModel?.epochs ?? "-")}
                                 mono
                             />
                             <InfoBox
-                                label="Hidden Dim"
+                                label="Hidden dim"
                                 value={String(graphModel?.hidden_dim ?? "-")}
                                 mono
                             />
                             <InfoBox
-                                label="Labelled Nodes"
+                                label="Node berlabel"
                                 value={String(graphModel?.labelled_count ?? "-")}
                                 mono
                             />
                         </div>
 
                         <div className="mt-6 rounded-sm border border-cyan-300/10 bg-cyan-400/5 p-4 text-sm leading-6 text-slate-400">
-                            This model is used as graph-learning evidence. Production TrustLens scoring
-                            still relies on rule guard, PaySim XGBoost, and internal adaptive model.
+                            Dataset Elliptic berbasis transaksi kripto dan digunakan sebagai prototype pembelajaran graph, bukan model produksi langsung untuk transfer bank. Scoring MVP tetap memakai rule guard, PaySim XGBoost, dan model adaptif internal.
                         </div>
                     </CardContent>
                 </Card>
@@ -639,7 +705,7 @@ function formatMetric(value?: number | null) {
     return value.toFixed(4);
 }
 
-function compactVersion(value?: string | null) {
+function compactVersi(value?: string | null) {
     if (!value) return "-";
 
     return value

@@ -22,13 +22,14 @@ export default function DashboardLayout({
             return;
         }
 
-        setReady(true);
+        const timer = window.setTimeout(() => setReady(true), 0);
+        return () => window.clearTimeout(timer);
     }, [router]);
 
     if (!ready) {
         return (
-            <div className="flex min-h-screen items-center justify-center bg-slate-950 text-slate-400">
-                Loading TrustLens dashboard...
+            <div className="flex min-h-screen items-center justify-center bg-slate-50 text-slate-500 dark:bg-slate-950 dark:text-slate-400">
+                Memuat dasbor TrustLens...
             </div>
         );
     }

@@ -28,7 +28,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
-type TransactionItem = {
+type TransaksiItem = {
   id: string;
   transaction_reference: string;
   amount: number;
@@ -61,11 +61,11 @@ type TransactionItem = {
   } | null;
 };
 
-type TransactionsResponse = {
+type TransaksisResponse = {
   total: number;
   limit: number;
-  offset: number;
-  items: TransactionItem[];
+  darifset: number;
+  items: TransaksiItem[];
 };
 
 type LabelItem = {
@@ -89,7 +89,7 @@ type LabelItem = {
 type LabelsResponse = {
   total: number;
   limit: number;
-  offset: number;
+  darifset: number;
   items: LabelItem[];
 };
 
@@ -105,28 +105,28 @@ const labelOptions = [
   {
     value: "fraud",
     title: "Fraud",
-    description: "Confirmed malicious financial activity.",
+    description: "Aktivitas fraud terkonfirmasi.",
     icon: AlertTriangle,
   },
   {
     value: "suspicious",
-    title: "Suspicious",
-    description: "Requires further investigation.",
+    title: "Mencurigakan",
+    description: "Perlu investigasi lanjutan.",
     icon: ShieldAlert,
   },
   {
     value: "legitimate",
-    title: "Legitimate",
-    description: "False positive or safe transaction.",
+    title: "Sah",
+    description: "False positive atau transaksi aman.",
     icon: CheckCircle2,
   },
 ] as const;
 
 export default function LabelingPage() {
-  const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+  const [transactions, setTransaksis] = useState<TransaksiItem[]>([]);
   const [labels, setLabels] = useState<LabelItem[]>([]);
-  const [selectedTransaction, setSelectedTransaction] =
-    useState<TransactionItem | null>(null);
+  const [selectedTransaksi, setSelectedTransaksi] =
+    useState<TransaksiItem | null>(null);
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
 
@@ -154,25 +154,25 @@ export default function LabelingPage() {
 
     try {
       const [transactionsData, labelsData] = await Promise.all([
-        apiFetch<TransactionsResponse>("/transactions?limit=60"),
+        apiFetch<TransaksisResponse>("/transactions?limit=60"),
         apiFetch<LabelsResponse>("/labels?limit=20"),
       ]);
 
-      setTransactions(transactionsData.items);
+      setTransaksis(transactionsData.items);
       setLabels(labelsData.items);
 
-      if (!selectedTransaction && transactionsData.items.length > 0) {
-        selectTransaction(transactionsData.items[0]);
+      if (!selectedTransaksi && transactionsData.items.length > 0) {
+        selectTransaksi(transactionsData.items[0]);
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to load labeling data");
+      toast.error(error instanceof Error ? error.message : "Gagal memuat data pelabelan");
     } finally {
       setLoading(false);
     }
   }
 
-  function selectTransaction(transaction: TransactionItem) {
-    setSelectedTransaction(transaction);
+  function selectTransaksi(transaction: TransaksiItem) {
+    setSelectedTransaksi(transaction);
     setValue("transaction_id", transaction.id);
   }
 
@@ -185,8 +185,8 @@ export default function LabelingPage() {
 
       toast.success(
         result.alert_updated
-          ? "Label saved and alert status updated"
-          : "Label saved successfully"
+          ? "Label disimpan dan status peringatan diperbarui"
+          : "Label berhasil disimpan"
       );
 
       reset({
@@ -198,7 +198,7 @@ export default function LabelingPage() {
 
       await loadData();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to save label");
+      toast.error(error instanceof Error ? error.message : "Gagal menyimpan label");
     }
   }
 
@@ -207,7 +207,7 @@ export default function LabelingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const filteredTransactions = useMemo(() => {
+  const filteredTransaksis = useMemo(() => {
     const keyword = search.trim().toLowerCase();
 
     if (!keyword) return transactions;
@@ -236,7 +236,7 @@ export default function LabelingPage() {
     return (
       <div className="flex min-h-[70vh] items-center justify-center text-slate-400">
         <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-300" />
-        Loading analyst terminal...
+        Memuat antrian pelabelan...
       </div>
     );
   }
@@ -247,20 +247,18 @@ export default function LabelingPage() {
         <div>
           <div className="mb-4 flex items-center gap-2">
             <Badge className="rounded-sm bg-cyan-400/10 text-cyan-300 hover:bg-cyan-400/10">
-              ANALYST TERMINAL
+              Pelabelan analyst
             </Badge>
             <span className="text-xs uppercase tracking-[0.14em] text-slate-600">
-              / Human-in-the-loop / Labeling Queue
+              / Human-in-the-loop / Antrian label
             </span>
           </div>
 
           <h1 className="text-5xl font-black tracking-tight text-slate-100">
-            LABELING
+            Pelabelan
           </h1>
           <p className="mt-3 max-w-3xl text-base leading-7 text-slate-400">
-            Validate model decisions by labeling transactions as fraud,
-            suspicious, or legitimate. These labels become ground truth for
-            continuous model improvement.
+            Validasi keputusan model dengan memberi label fraud, mencurigakan, atau sah. Label ini menjadi data pembelajaran model adaptif.
           </p>
         </div>
 
@@ -269,25 +267,25 @@ export default function LabelingPage() {
           className="rounded-sm bg-cyan-400 font-bold text-[#06111f] hover:bg-cyan-300"
         >
           <RefreshCcw className="mr-2 h-4 w-4" />
-          Refresh Queue
+          Muat ulang
         </Button>
       </section>
 
       <section className="grid gap-6 md:grid-cols-3">
         <LabelMetric
-          label="Fraud Labels"
+          label="Label fraud"
           value={fraudLabels}
           icon={<AlertTriangle className="h-8 w-8 text-red-200" />}
           tone="red"
         />
         <LabelMetric
-          label="Suspicious Labels"
+          label="Label mencurigakan"
           value={suspiciousLabels}
           icon={<ShieldAlert className="h-8 w-8 text-cyan-300" />}
           tone="cyan"
         />
         <LabelMetric
-          label="Legitimate Labels"
+          label="Label sah"
           value={legitimateLabels}
           icon={<CheckCircle2 className="h-8 w-8 text-emerald-300" />}
           tone="emerald"
@@ -301,10 +299,10 @@ export default function LabelingPage() {
               <div className="flex items-center justify-between">
                 <div>
                   <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
-                    Transaction Queue
+                    Transaksi Queue
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Select one transaction to classify.
+                    Pilih satu transaksi untuk ditinjau.
                   </p>
                 </div>
                 <Database className="h-5 w-5 text-cyan-300" />
@@ -315,20 +313,20 @@ export default function LabelingPage() {
                 <Input
                   value={search}
                   onChange={(event) => setSearch(event.target.value)}
-                  placeholder="Search transaction..."
+                  placeholder="Cari transaksi..."
                   className="h-full border-0 bg-transparent px-0 text-slate-200 placeholder:text-slate-600 focus-visible:ring-0"
                 />
               </div>
             </div>
 
             <div className="max-h-[760px] overflow-y-auto">
-              {filteredTransactions.map((transaction) => (
+              {filteredTransaksis.map((transaction) => (
                 <button
                   key={transaction.id}
-                  onClick={() => selectTransaction(transaction)}
+                  onClick={() => selectTransaksi(transaction)}
                   className={cn(
                     "w-full border-b border-white/5 p-5 text-left transition hover:bg-cyan-400/[0.04]",
-                    selectedTransaction?.id === transaction.id &&
+                    selectedTransaksi?.id === transaction.id &&
                       "bg-cyan-400/10"
                   )}
                 >
@@ -336,13 +334,13 @@ export default function LabelingPage() {
                     <span className="trust-mono text-sm text-cyan-300">
                       {compactId(transaction.transaction_reference, 10, 4)}
                     </span>
-                    <RiskTag risk={transaction.risk_level} />
+                    <RisikoTag risk={transaction.risk_level} />
                   </div>
 
                   <p className="mt-3 text-sm font-semibold text-slate-200">
-                    {transaction.sender_account?.holder_name || "Unknown Sender"}
+                    {transaction.sender_account?.holder_name || "Pengirim tidak diketahui"}
                     <span className="mx-2 text-slate-600">→</span>
-                    {transaction.receiver_account?.holder_name || "Unknown Receiver"}
+                    {transaction.receiver_account?.holder_name || "Penerima tidak diketahui"}
                   </p>
 
                   <div className="mt-3 flex items-center justify-between text-xs text-slate-600">
@@ -354,9 +352,9 @@ export default function LabelingPage() {
                 </button>
               ))}
 
-              {filteredTransactions.length === 0 && (
+              {filteredTransaksis.length === 0 && (
                 <div className="p-8 text-center text-sm text-slate-500">
-                  No transaction matched your query.
+                  Tidak ada transaksi sesuai pencarian.
                 </div>
               )}
             </div>
@@ -369,28 +367,28 @@ export default function LabelingPage() {
               <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
                 <div>
                   <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
-                    Classification Console
+                    Form pelabelan
                   </h2>
                   <p className="mt-1 text-sm text-slate-500">
-                    Submit analyst decision for the selected transaction.
+                    Kirim keputusan analyst untuk transaksi terpilih.
                   </p>
                 </div>
                 <TerminalSquare className="h-5 w-5 text-cyan-300" />
               </div>
 
-              {!selectedTransaction ? (
+              {!selectedTransaksi ? (
                 <div className="p-8 text-slate-500">
-                  Select a transaction from the queue.
+                  Pilih transaksi dari antrian.
                 </div>
               ) : (
                 <div className="grid gap-6 p-6 xl:grid-cols-[1fr_360px]">
-                  <TransactionDetail transaction={selectedTransaction} />
+                  <TransaksiDetail transaction={selectedTransaksi} />
 
                   <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
                     <input type="hidden" {...register("transaction_id")} />
 
                     <div className="space-y-2">
-                      <Label className="trust-label">Analyst ID</Label>
+                      <Label className="trust-label">Nama analyst</Label>
                       <Input
                         className="h-12 rounded-sm border-white/10 bg-[#050b18] text-slate-100"
                         {...register("labelled_by")}
@@ -403,7 +401,7 @@ export default function LabelingPage() {
                     </div>
 
                     <div className="space-y-3">
-                      <Label className="trust-label">Classification Label</Label>
+                      <Label className="trust-label">Label klasifikasi</Label>
 
                       <div className="space-y-3">
                         {labelOptions.map((option) => {
@@ -455,7 +453,7 @@ export default function LabelingPage() {
                     </div>
 
                     <div className="space-y-2">
-                      <Label className="trust-label">Analyst Notes</Label>
+                      <Label className="trust-label">Catatan analyst</Label>
                       <textarea
                         rows={5}
                         className="w-full rounded-sm border border-white/10 bg-[#050b18] px-3 py-3 text-sm text-slate-100 outline-none ring-cyan-300/30 placeholder:text-slate-600 focus:ring-2"
@@ -472,7 +470,7 @@ export default function LabelingPage() {
                       {isSubmitting ? (
                         <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                          Submitting label...
+                          Menyimpan label...
                         </>
                       ) : (
                         <>
@@ -568,32 +566,32 @@ function LabelMetric({
   );
 }
 
-function TransactionDetail({ transaction }: { transaction: TransactionItem }) {
+function TransaksiDetail({ transaction }: { transaction: TransaksiItem }) {
   return (
     <div className="space-y-5">
       <div className="rounded-sm border border-white/10 bg-[#050b18] p-5">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
-            <p className="trust-label">Selected Transaction</p>
+            <p className="trust-label">Selected Transaksi</p>
             <p className="mt-2 trust-mono text-lg font-bold text-cyan-300">
               {transaction.transaction_reference}
             </p>
           </div>
-          <RiskTag risk={transaction.risk_level} />
+          <RisikoTag risk={transaction.risk_level} />
         </div>
 
         <div className="mt-5 grid gap-3 md:grid-cols-2">
           <InfoBox
-            label="Amount"
+            label="Nominal"
             value={formatCurrency(transaction.amount, transaction.currency)}
           />
           <InfoBox
-            label="Fraud Score"
+            label="Skor Fraud"
             value={`${Math.round(transaction.fraud_score * 100)}`}
             mono
           />
           <InfoBox
-            label="Route"
+            label="Rute"
             value={`${transaction.source_country} → ${transaction.destination_country}`}
             mono
           />
@@ -611,7 +609,7 @@ function TransactionDetail({ transaction }: { transaction: TransactionItem }) {
             value={transaction.merchant?.name || "No merchant"}
           />
           <InfoBox
-            label="Timestamp"
+            label="Waktu"
             value={formatDateTime(transaction.transaction_time)}
           />
         </div>
@@ -639,7 +637,7 @@ function InfoBox({
   );
 }
 
-function RiskTag({ risk }: { risk: string }) {
+function RisikoTag({ risk }: { risk: string }) {
   const style =
     risk === "high"
       ? "border-red-300/30 bg-red-400/10 text-red-200"

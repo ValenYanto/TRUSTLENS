@@ -20,7 +20,7 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # nanti dibatasi saat production
+    allow_origins=settings.cors_origins,
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -42,6 +42,11 @@ def health_check():
         "status": "healthy",
         "service": "trustlens-backend",
     }
+
+
+@app.get("/api/v1/health")
+def api_health_check():
+    return health_check()
 
 
 app.include_router(dashboard_router, prefix="/api/v1")

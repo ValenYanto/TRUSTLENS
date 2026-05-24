@@ -22,7 +22,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 
-type TransactionItem = {
+type TransaksiItem = {
     id: string;
     transaction_reference: string;
     sender_account_id: string;
@@ -62,18 +62,18 @@ type TransactionItem = {
     } | null;
 };
 
-type TransactionsResponse = {
+type TransaksisResponse = {
     total: number;
     limit: number;
-    offset: number;
-    items: TransactionItem[];
+    darifset: number;
+    items: TransaksiItem[];
 };
 
 const riskOptions = ["all", "low", "medium", "high"] as const;
 const statusOptions = ["all", "approved", "flagged", "blocked", "pending"] as const;
 
-export default function TransactionsPage() {
-    const [transactions, setTransactions] = useState<TransactionItem[]>([]);
+export default function TransaksisPage() {
+    const [transactions, setTransaksis] = useState<TransaksiItem[]>([]);
     const [total, setTotal] = useState(0);
     const [riskLevel, setRiskLevel] = useState<(typeof riskOptions)[number]>("all");
     const [status, setStatus] = useState<(typeof statusOptions)[number]>("all");
@@ -90,26 +90,26 @@ export default function TransactionsPage() {
         return `/transactions?${params.toString()}`;
     }, [riskLevel, status]);
 
-    async function loadTransactions() {
+    async function loadTransaksis() {
         setLoading(true);
 
         try {
-            const data = await apiFetch<TransactionsResponse>(queryPath);
-            setTransactions(data.items);
+            const data = await apiFetch<TransaksisResponse>(queryPath);
+            setTransaksis(data.items);
             setTotal(data.total);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to load transactions");
+            toast.error(error instanceof Error ? error.message : "Gagal memuat transaksi");
         } finally {
             setLoading(false);
         }
     }
 
     useEffect(() => {
-        loadTransactions();
+        loadTransaksis();
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryPath]);
 
-    const filteredTransactions = useMemo(() => {
+    const filteredTransaksis = useMemo(() => {
         const keyword = search.trim().toLowerCase();
 
         if (!keyword) return transactions;
@@ -131,9 +131,9 @@ export default function TransactionsPage() {
         });
     }, [transactions, search]);
 
-    function copyReference(reference: string) {
+    function copyReferensi(reference: string) {
         navigator.clipboard.writeText(reference);
-        toast.success("Transaction reference copied");
+        toast.success("Referensi transaksi disalin");
     }
 
     function exportCsv() {
@@ -149,7 +149,7 @@ export default function TransactionsPage() {
             "status",
         ];
 
-        const rows = filteredTransactions.map((transaction) => [
+        const rows = filteredTransaksis.map((transaction) => [
             transaction.transaction_reference,
             transaction.transaction_time,
             transaction.sender_account?.holder_name || "-",
@@ -179,19 +179,18 @@ export default function TransactionsPage() {
                 <div>
                     <div className="mb-4 flex items-center gap-2">
                         <Badge className="rounded-sm bg-cyan-400/10 text-cyan-300 hover:bg-cyan-400/10">
-                            REAL-TIME STREAM
+                            Arus transaksi
                         </Badge>
                         <span className="text-xs uppercase tracking-[0.14em] text-slate-600">
-                            / Ledger / Transaction Monitor
+                            / Monitoring transaksi
                         </span>
                     </div>
 
                     <h1 className="text-5xl font-black tracking-tight text-slate-100">
-                        TRANSACTIONS
+                        Transaksi
                     </h1>
                     <p className="mt-3 max-w-3xl text-base leading-7 text-slate-400">
-                        Deep inspection of financial movements with fraud score, route
-                        intelligence, account relation, and risk vector classification.
+                        Pantau transaksi, skor fraud, rute negara, relasi akun, dan status keputusan dengan tampilan yang mudah ditinjau.
                     </p>
                 </div>
 
@@ -202,33 +201,33 @@ export default function TransactionsPage() {
                         className="rounded-sm border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                     >
                         <Download className="mr-2 h-4 w-4" />
-                        Export CSV
+                        Ekspor CSV
                     </Button>
                     <Button
-                        onClick={loadTransactions}
+                        onClick={loadTransaksis}
                         className="rounded-sm bg-cyan-400 font-bold text-[#06111f] hover:bg-cyan-300"
                     >
                         <RefreshCcw className="mr-2 h-4 w-4" />
-                        Sync Node
+                        Muat ulang
                     </Button>
                 </div>
             </section>
 
             <section className="grid gap-4 xl:grid-cols-[1.2fr_0.8fr_0.8fr_0.8fr]">
-                <div className="trust-panel-soft rounded-md p-4">
-                    <p className="trust-label mb-3">Search Protocol</p>
+                <div className="trust-panel-sdarit rounded-md p-4">
+                    <p className="trust-label mb-3">Cari transaksi</p>
                     <div className="flex h-11 items-center gap-3 rounded-sm bg-[#050b18] px-3">
                         <Search className="h-4 w-4 text-slate-500" />
                         <Input
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
-                            placeholder="Hash / account / merchant / route..."
+                            placeholder="Referensi / akun / merchant / rute..."
                             className="h-full border-0 bg-transparent px-0 text-slate-200 placeholder:text-slate-600 focus-visible:ring-0"
                         />
                     </div>
                 </div>
 
-                <FilterBox title="Risk Sensitivity" icon={<ShieldAlert className="h-4 w-4" />}>
+                <FilterBox title="Filter risiko" icon={<ShieldAlert className="h-4 w-4" />}>
                     <div className="flex flex-wrap gap-2">
                         {riskOptions.map((option) => (
                             <button
@@ -247,7 +246,7 @@ export default function TransactionsPage() {
                     </div>
                 </FilterBox>
 
-                <FilterBox title="Status Filter" icon={<SlidersHorizontal className="h-4 w-4" />}>
+                <FilterBox title="Filter status" icon={<SlidersHorizontal className="h-4 w-4" />}>
                     <div className="flex flex-wrap gap-2">
                         {statusOptions.map((option) => (
                             <button
@@ -266,11 +265,11 @@ export default function TransactionsPage() {
                     </div>
                 </FilterBox>
 
-                <FilterBox title="Node Load" icon={<Activity className="h-4 w-4" />}>
+                <FilterBox title="Jumlah data" icon={<Activity className="h-4 w-4" />}>
                     <div>
                         <p className="text-2xl font-black text-cyan-300">{total}</p>
                         <p className="mt-1 text-xs uppercase tracking-[0.12em] text-slate-500">
-                            Matched transactions
+                            Transaksi cocok
                         </p>
                     </div>
                 </FilterBox>
@@ -280,8 +279,8 @@ export default function TransactionsPage() {
                 <CardContent className="p-0">
                     <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
                         <div className="text-sm uppercase tracking-[0.14em] text-slate-400">
-                            Streaming: <span className="font-bold text-emerald-300">Active</span>
-                            <span className="ml-6 text-slate-600">Matched: {filteredTransactions.length} records</span>
+                            Status: <span className="font-bold text-emerald-300">Aktif</span>
+                            <span className="ml-6 text-slate-600">Ditampilkan: {filteredTransaksis.length} data</span>
                         </div>
                         <Filter className="h-4 w-4 text-slate-500" />
                     </div>
@@ -289,25 +288,25 @@ export default function TransactionsPage() {
                     {loading ? (
                         <div className="flex h-80 items-center justify-center text-slate-400">
                             <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-300" />
-                            Loading transaction stream...
+                            Memuat transaksi...
                         </div>
                     ) : (
                         <div className="overflow-x-auto">
                             <table className="w-full min-w-[1050px] text-left">
                                 <thead className="bg-[#081120] text-[11px] uppercase tracking-[0.14em] text-slate-500">
                                     <tr>
-                                        <th className="px-6 py-4 font-medium">Timestamp</th>
-                                        <th className="px-6 py-4 font-medium">Transaction Hash</th>
-                                        <th className="px-6 py-4 font-medium">Account Flow</th>
-                                        <th className="px-6 py-4 font-medium">Route</th>
-                                        <th className="px-6 py-4 font-medium">Value</th>
-                                        <th className="px-6 py-4 font-medium">Risk Vector</th>
+                                        <th className="px-6 py-4 font-medium">Waktu</th>
+                                        <th className="px-6 py-4 font-medium">Referensi transaksi</th>
+                                        <th className="px-6 py-4 font-medium">Alur akun</th>
+                                        <th className="px-6 py-4 font-medium">Rute</th>
+                                        <th className="px-6 py-4 font-medium">Nominal</th>
+                                        <th className="px-6 py-4 font-medium">Risiko</th>
                                         <th className="px-6 py-4 font-medium">Status</th>
                                     </tr>
                                 </thead>
 
                                 <tbody className="divide-y divide-white/5">
-                                    {filteredTransactions.map((transaction) => (
+                                    {filteredTransaksis.map((transaction) => (
                                         <tr
                                             key={transaction.id}
                                             className="bg-slate-900/30 transition hover:bg-cyan-400/[0.04]"
@@ -316,12 +315,12 @@ export default function TransactionsPage() {
                                                 <p className="text-sm text-slate-300">
                                                     {formatDateTime(transaction.transaction_time)}
                                                 </p>
-                                                <p className="mt-1 text-xs text-slate-600">UTC+7</p>
+                                                <p className="mt-1 text-xs text-slate-600">WIB</p>
                                             </td>
 
                                             <td className="px-6 py-5 align-top">
                                                 <button
-                                                    onClick={() => copyReference(transaction.transaction_reference)}
+                                                    onClick={() => copyReferensi(transaction.transaction_reference)}
                                                     className="flex items-center gap-2 font-mono text-sm text-cyan-300 hover:text-cyan-200"
                                                 >
                                                     {compactId(transaction.transaction_reference)}
@@ -334,10 +333,10 @@ export default function TransactionsPage() {
 
                                             <td className="px-6 py-5 align-top">
                                                 <p className="text-sm font-semibold text-slate-200">
-                                                    {transaction.sender_account?.holder_name || "Unknown Sender"}
+                                                    {transaction.sender_account?.holder_name || "Pengirim tidak diketahui"}
                                                 </p>
                                                 <p className="text-xs text-slate-500">
-                                                    → {transaction.receiver_account?.holder_name || "Unknown Receiver"}
+                                                    → {transaction.receiver_account?.holder_name || "Penerima tidak diketahui"}
                                                 </p>
                                                 {transaction.merchant && (
                                                     <p className="mt-2 text-xs text-cyan-300">
@@ -364,7 +363,7 @@ export default function TransactionsPage() {
                                             </td>
 
                                             <td className="px-6 py-5 align-top">
-                                                <RiskBadge risk={transaction.risk_level} score={transaction.fraud_score} />
+                                                <RisikoBadge risk={transaction.risk_level} score={transaction.fraud_score} />
                                             </td>
 
                                             <td className="px-6 py-5 align-top">
@@ -375,9 +374,9 @@ export default function TransactionsPage() {
                                 </tbody>
                             </table>
 
-                            {filteredTransactions.length === 0 && (
+                            {filteredTransaksis.length === 0 && (
                                 <div className="p-10 text-center text-slate-500">
-                                    No transaction vectors matched your filter.
+                                    Tidak ada transaksi yang sesuai filter.
                                 </div>
                             )}
                         </div>
@@ -398,7 +397,7 @@ function FilterBox({
     children: React.ReactNode;
 }) {
     return (
-        <div className="trust-panel-soft rounded-md p-4">
+        <div className="trust-panel-sdarit rounded-md p-4">
             <div className="mb-3 flex items-center justify-between">
                 <p className="trust-label">{title}</p>
                 <span className="text-slate-500">{icon}</span>
@@ -408,7 +407,7 @@ function FilterBox({
     );
 }
 
-function RiskBadge({ risk, score }: { risk: string; score: number }) {
+function RisikoBadge({ risk, score }: { risk: string; score: number }) {
     const style =
         risk === "high"
             ? "border-red-300/30 bg-red-400/10 text-red-200"
@@ -417,7 +416,7 @@ function RiskBadge({ risk, score }: { risk: string; score: number }) {
                 : "border-emerald-300/30 bg-emerald-400/10 text-emerald-200";
 
     const label =
-        risk === "high" ? "CRITICAL" : risk === "medium" ? "ELEVATED" : "NOMINAL";
+        risk === "high" ? "Tinggi" : risk === "medium" ? "Sedang" : "Rendah";
 
     return (
         <div className={cn("inline-flex min-w-28 flex-col rounded-sm border px-3 py-2", style)}>

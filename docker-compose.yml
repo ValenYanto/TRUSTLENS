@@ -2,45 +2,113 @@ services:
   postgres:
     image: postgres:16
     container_name: trustlens-postgres
-    restart: always
+    restart: unless-stopped
     environment:
-      POSTGRES_DB: trustlens
-      POSTGRES_USER: trustlens
-      POSTGRES_PASSWORD: trustlens
+      POSTGRES_DB: ${POSTGRES_DB:-trustlens}
+      POSTGRES_USER: ${POSTGRES_USER:-trustlens}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-trustlens_password}
     ports:
-      - "5433:5432"
+      - "${HOST_POSTGRES_PORT:-5432}:5432"
     volumes:
-      - trustlens_postgres_data:/var/lib/postgresql/data
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U $${POSTGRES_USER} -d $${POSTGRES_DB}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    networks:
+      - trustlens-network
 
   neo4j:
     image: neo4j:5
     container_name: trustlens-neo4j
-    restart: always
+    restart: unless-stopped
     environment:
-      NEO4J_AUTH: neo4j/trustlens123
+      NEO4J_AUTH: ${NEO4J_USER:-neo4j}/${NEO4J_PASSWORD:-trustlens_neo4j_password}
+      NEO4J_PLUGINS: ${NEO4J_PLUGINS:-[]}
     ports:
-      - "7474:7474"
-      - "7687:7687"
+      - "${HOST_NEO4J_HTTP_PORT:-7474}:7474"
+      - "${HOST_NEO4J_BOLT_PORT:-7687}:7687"
     volumes:
-      - trustlens_neo4j_data:/data
+      - neo4j_data:/data
+      - neo4j_logs:/logs
+    healthcheck:
+      test: ["CMD-SHELL", "password=\"$${NEO4J_AUTH#*/}\"; cypher-shell -u neo4j -p \"$${password}\" 'RETURN 1' || exit 1"]
+      interval: 15s
+      timeout: 10s
+      retries: 20
+      start_period: 30s
+    networks:
+      - trustlens-network
 
   backend:
     build:
       context: ./backend
       dockerfile: Dockerfile
     container_name: trustlens-backend
-    restart: always
+    restart: unless-stopped
     env_file:
-      - ./backend/.env
+      - ./.env
     environment:
       POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      DATABASE_URL: postgresql+psycopg2://${POSTGRES_USER:-trustlens}:${POSTGRES_PASSWORD:-trustlens_password}@postgres:5432/${POSTGRES_DB:-trustlens}
       NEO4J_URI: bolt://neo4j:7687
+      NEO4J_USER: ${NEO4J_USER:-neo4j}
+      NEO4J_PASSWORD: ${NEO4J_PASSWORD:-trustlens_neo4j_password}
     ports:
-      - "8000:8000"
+      - "${HOST_BACKEND_PORT:-8000}:8000"
     depends_on:
-      - postgres
-      - neo4j
+      postgres:
+        condition: service_healthy
+      neo4j:
+        condition: service_healthy
+    volumes:
+      - backend_ml_artifacts:/app/app/ml/artifacts
+      - ./backend/data:/app/data
+    healthcheck:
+      test: ["CMD-SHELL", "curl -fsS http://localhost:8000/api/v1/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 40s
+    networks:
+      - trustlens-network
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+      args:
+        NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+        NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}
+    container_name: trustlens-frontend
+    restart: unless-stopped
+    env_file:
+      - ./.env
+    environment:
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:8000/api/v1}
+      NEXT_PUBLIC_API_BASE_URL: ${NEXT_PUBLIC_API_BASE_URL:-http://localhost:8000/api/v1}
+    ports:
+      - "${HOST_FRONTEND_PORT:-3000}:3000"
+    depends_on:
+      backend:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000 >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
+    networks:
+      - trustlens-network
+
+networks:
+  trustlens-network:
+    name: trustlens-network
 
 volumes:
-  trustlens_postgres_data:
-  trustlens_neo4j_data:
+  postgres_data:
+  neo4j_data:
+  neo4j_logs:
+  backend_ml_artifacts:

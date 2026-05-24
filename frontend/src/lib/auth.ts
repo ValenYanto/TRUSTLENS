@@ -14,6 +14,21 @@ export type LoginResponse = {
     user: User;
 };
 
+export type RegisterResponse = User;
+
+export async function registerUser(payload: {
+    full_name: string;
+    email: string;
+    password: string;
+    role: User["role"];
+    institution_name?: string | null;
+}) {
+    return apiFetch<RegisterResponse>("/auth/register", {
+        method: "POST",
+        body: JSON.stringify(payload),
+    });
+}
+
 export async function login(email: string, password: string) {
     const result = await apiFetch<LoginResponse>("/auth/login", {
         method: "POST",

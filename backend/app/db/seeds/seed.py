@@ -368,8 +368,16 @@ def run_seed():
     db = SessionLocal()
 
     try:
-        print("[+] Clearing existing data...")
-        clear_existing_data(db)
+        existing_users = db.query(User).count()
+        existing_accounts = db.query(Account).count()
+        existing_transactions = db.query(Transaction).count()
+
+        if existing_users or existing_accounts or existing_transactions:
+            print("[✓] Demo seed skipped; existing data found.")
+            print(f"    Users        : {existing_users}")
+            print(f"    Accounts     : {existing_accounts}")
+            print(f"    Transactions : {existing_transactions}")
+            return
 
         print("[+] Seeding users...")
         users = seed_users(db)

@@ -113,8 +113,8 @@ export default function SimulationPage() {
         },
     });
 
-    const watchedAmount = watch("amount");
-    const watchedSource = watch("source_country");
+    const watchedNominal = watch("amount");
+    const watchedSumber = watch("source_country");
     const watchedDestination = watch("destination_country");
 
     useEffect(() => {
@@ -136,18 +136,18 @@ export default function SimulationPage() {
                     setValue("receiver_account_id", defaultReceiver.id);
                 }
 
-                const highRiskDevice =
+                const tinggiRisikoPerangkat =
                     data.devices.find((device) => device.is_blacklisted) || data.devices[0];
 
-                const highRiskMerchant =
+                const tinggiRisikoMerchant =
                     data.merchants.find((merchant) => merchant.risk_level === "high") ||
                     data.merchants[0];
 
-                if (highRiskDevice) setValue("device_id", highRiskDevice.id);
-                if (highRiskMerchant) setValue("merchant_id", highRiskMerchant.id);
+                if (tinggiRisikoPerangkat) setValue("device_id", tinggiRisikoPerangkat.id);
+                if (tinggiRisikoMerchant) setValue("merchant_id", tinggiRisikoMerchant.id);
             } catch (error) {
                 toast.error(
-                    error instanceof Error ? error.message : "Failed to load demo options"
+                    error instanceof Error ? error.message : "Gagal memuat opsi simulasi"
                 );
             } finally {
                 setLoadingOptions(false);
@@ -157,17 +157,17 @@ export default function SimulationPage() {
         loadOptions();
     }, [setValue]);
 
-    const previewRisk = useMemo(() => {
+    const previewRisiko = useMemo(() => {
         let score = 8;
 
-        if (Number(watchedAmount) >= 100000000) score += 35;
-        else if (Number(watchedAmount) >= 50000000) score += 25;
-        else if (Number(watchedAmount) >= 10000000) score += 12;
+        if (Number(watchedNominal) >= 100000000) score += 35;
+        else if (Number(watchedNominal) >= 50000000) score += 25;
+        else if (Number(watchedNominal) >= 10000000) score += 12;
 
-        if (watchedSource !== watchedDestination) score += 18;
+        if (watchedSumber !== watchedDestination) score += 18;
 
         return Math.min(score, 99);
-    }, [watchedAmount, watchedSource, watchedDestination]);
+    }, [watchedNominal, watchedSumber, watchedDestination]);
 
     async function onSubmit(values: SimulationFormValues) {
         setResult(null);
@@ -184,9 +184,9 @@ export default function SimulationPage() {
             });
 
             setResult(data);
-            toast.success("Simulation executed successfully");
+            toast.success("Simulasi berhasil dijalankan");
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Simulation failed");
+            toast.error(error instanceof Error ? error.message : "Simulasi gagal");
         }
     }
 
@@ -194,7 +194,7 @@ export default function SimulationPage() {
         return (
             <div className="flex min-h-[70vh] items-center justify-center text-slate-400">
                 <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-300" />
-                Loading simulation environment...
+                Memuat data simulasi...
             </div>
         );
     }
@@ -205,26 +205,24 @@ export default function SimulationPage() {
                 <div>
                     <div className="mb-4 flex items-center gap-2">
                         <Badge className="rounded-sm bg-cyan-400/10 text-cyan-300 hover:bg-cyan-400/10">
-                            FRAUD LAB
+                            Simulasi fraud
                         </Badge>
                         <span className="text-xs uppercase tracking-[0.14em] text-slate-600">
-                            / Simulation / Inference Node
+                            / Demo scoring
                         </span>
                     </div>
 
                     <h1 className="text-5xl font-black tracking-tight text-slate-100">
-                        SIMULATION
+                        Simulasi
                     </h1>
                     <p className="mt-3 max-w-3xl text-base leading-7 text-slate-400">
-                        Inject a synthetic transaction into TrustLens. The backend will score
-                        it using a risk-aware ensemble: business rule guard plus the trained
-                        PaySim XGBoost fraud model.
+                        Buat transaksi uji dan lihat bagaimana TrustLens menghitung skor fraud dengan rule guard, PaySim XGBoost, dan model adaptif internal.
                     </p>
                 </div>
 
                 <div className="trust-panel-soft rounded-md px-5 py-4">
-                    <p className="trust-label">Preview Rule Vector</p>
-                    <p className="mt-2 text-3xl font-black text-cyan-300">{previewRisk}</p>
+                    <p className="trust-label">Estimasi risiko awal</p>
+                    <p className="mt-2 text-3xl font-black text-cyan-300">{previewRisiko}</p>
                 </div>
             </section>
 
@@ -234,10 +232,10 @@ export default function SimulationPage() {
                         <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
                             <div>
                                 <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
-                                    New Simulation Payload
+                                    Input transaksi simulasi
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    Configure transaction attributes for fraud scoring.
+                                    Atur detail transaksi untuk melihat hasil scoring fraud.
                                 </p>
                             </div>
                             <Radar className="h-5 w-5 text-cyan-300" />
@@ -246,11 +244,11 @@ export default function SimulationPage() {
                         <form onSubmit={handleSubmit(onSubmit)} className="space-y-7 p-6">
                             <div className="grid gap-5 md:grid-cols-2">
                                 <SelectField
-                                    label="Sender Account"
+                                    label="Akun pengirim"
                                     error={errors.sender_account_id?.message}
                                     {...register("sender_account_id")}
                                 >
-                                    <option value="">Select sender</option>
+                                    <option value="">Pilih pengirim</option>
                                     {options?.accounts.map((account) => (
                                         <option key={account.id} value={account.id}>
                                             {account.holder_name} · {account.risk_level}
@@ -259,11 +257,11 @@ export default function SimulationPage() {
                                 </SelectField>
 
                                 <SelectField
-                                    label="Receiver Account"
+                                    label="Akun penerima"
                                     error={errors.receiver_account_id?.message}
                                     {...register("receiver_account_id")}
                                 >
-                                    <option value="">Select receiver</option>
+                                    <option value="">Pilih penerima</option>
                                     {options?.accounts.map((account) => (
                                         <option key={account.id} value={account.id}>
                                             {account.holder_name} · {account.risk_level}
@@ -272,25 +270,25 @@ export default function SimulationPage() {
                                 </SelectField>
 
                                 <SelectField
-                                    label="Device Fingerprint"
+                                    label="Perangkat"
                                     error={errors.device_id?.message}
                                     {...register("device_id")}
                                 >
-                                    <option value="">Select device</option>
+                                    <option value="">Pilih perangkat</option>
                                     {options?.devices.map((device) => (
                                         <option key={device.id} value={device.id}>
                                             {device.device_fingerprint} · {device.risk_level}
-                                            {device.is_blacklisted ? " · blacklisted" : ""}
+                                            {device.is_blacklisted ? " · daftar hitam" : ""}
                                         </option>
                                     ))}
                                 </SelectField>
 
                                 <SelectField
-                                    label="Merchant Node"
+                                    label="Merchant"
                                     error={errors.merchant_id?.message}
                                     {...register("merchant_id")}
                                 >
-                                    <option value="">Select merchant</option>
+                                    <option value="">Pilih merchant</option>
                                     {options?.merchants.map((merchant) => (
                                         <option key={merchant.id} value={merchant.id}>
                                             {merchant.name} · {merchant.risk_level}
@@ -301,14 +299,14 @@ export default function SimulationPage() {
 
                             <div className="grid gap-5 md:grid-cols-3">
                                 <TextField
-                                    label="Amount"
+                                    label="Nominal"
                                     type="number"
                                     error={errors.amount?.message}
                                     {...register("amount")}
                                 />
 
                                 <SelectField
-                                    label="Currency"
+                                    label="Mata uang"
                                     error={errors.currency?.message}
                                     {...register("currency")}
                                 >
@@ -318,7 +316,7 @@ export default function SimulationPage() {
                                 </SelectField>
 
                                 <SelectField
-                                    label="Channel"
+                                    label="Kanal"
                                     error={errors.channel?.message}
                                     {...register("channel")}
                                 >
@@ -332,7 +330,7 @@ export default function SimulationPage() {
 
                             <div className="grid gap-5 md:grid-cols-3">
                                 <SelectField
-                                    label="Source Country"
+                                    label="Negara asal"
                                     error={errors.source_country?.message}
                                     {...register("source_country")}
                                 >
@@ -344,7 +342,7 @@ export default function SimulationPage() {
                                 </SelectField>
 
                                 <SelectField
-                                    label="Destination Country"
+                                    label="Negara tujuan"
                                     error={errors.destination_country?.message}
                                     {...register("destination_country")}
                                 >
@@ -356,7 +354,7 @@ export default function SimulationPage() {
                                 </SelectField>
 
                                 <TextField
-                                    label="IP Address"
+                                    label="Alamat IP"
                                     error={errors.ip_address?.message}
                                     {...register("ip_address")}
                                 />
@@ -370,12 +368,12 @@ export default function SimulationPage() {
                                 {isSubmitting ? (
                                     <>
                                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Running inference...
+                                        Menghitung skor...
                                     </>
                                 ) : (
                                     <>
                                         <Play className="mr-2 h-4 w-4" />
-                                        Execute Simulation
+                                        Jalankan Simulasi
                                     </>
                                 )}
                             </Button>
@@ -388,38 +386,37 @@ export default function SimulationPage() {
                         <CardContent className="p-6">
                             <div className="flex items-start justify-between">
                                 <div>
-                                    <p className="trust-label">Engine Stack</p>
+                                    <p className="trust-label">Lapisan scoring</p>
                                     <h3 className="mt-3 text-2xl font-black text-slate-100">
-                                        Risk-Aware Ensemble
+                                        Risiko-Aware Ensemble
                                     </h3>
                                 </div>
                                 <Cpu className="h-8 w-8 text-cyan-300" />
                             </div>
 
                             <div className="mt-6 space-y-3">
-                                <EngineRow icon={<Zap />} label="Rule Engine" value="Risk Guard" />
-                                <EngineRow icon={<Bot />} label="PaySim XGBoost" value="Active Model" />
-                                <EngineRow icon={<Sparkles />} label="Ensemble Mode" value="Max Guard" />
+                                <EngineRow icon={<Zap />} label="Rule Guard" value="Penjaga aturan" />
+                                <EngineRow icon={<Bot />} label="PaySim XGBoost" value="Benchmark publik" />
+                                <EngineRow icon={<Sparkles />} label="Model adaptif" value="Label analyst" />
+                                <EngineRow icon={<ShieldCheck />} label="Mode ensemble" value="risk_aware_max_guard" />
                             </div>
 
                             <div className="mt-5 rounded-sm border border-cyan-300/10 bg-cyan-400/5 p-4 text-sm leading-6 text-slate-400">
-                                The trained PaySim model contributes probability, while rule-based
-                                red flags remain protected to prevent domain mismatch suppression.
+                                PaySim XGBoost adalah sinyal benchmark publik. Model adaptif belajar dari label analyst. Risk-aware guard memastikan sinyal risiko kuat dari aturan tidak ditekan oleh model yang memiliki perbedaan domain data.
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="trust-panel rounded-md border-cyan-300/10 text-slate-100">
                         <CardContent className="p-6">
-                            <p className="trust-label">Simulation Result</p>
+                            <p className="trust-label">Hasil simulasi</p>
 
                             {!result ? (
                                 <div className="mt-6 rounded-md border border-white/10 bg-[#050b18] p-6 text-sm leading-6 text-slate-500">
-                                    No simulation executed yet. Submit a transaction payload to
-                                    generate fraud score and alert decision.
+                                    Belum ada simulasi. Jalankan transaksi untuk melihat skor fraud dan keputusan peringatan.
                                 </div>
                             ) : (
-                                <ResultPanel result={result} amount={Number(watchedAmount || 0)} />
+                                <ResultPanel result={result} amount={Number(watchedNominal || 0)} />
                             )}
                         </CardContent>
                     </Card>
@@ -509,7 +506,7 @@ function ResultPanel({
                 )}
             >
                 <div className="flex items-center justify-between">
-                    <p className="trust-label">Fraud Score</p>
+                    <p className="trust-label">Final Skor Fraud</p>
                     {result.alert_created ? (
                         <AlertTriangle className="h-5 w-5 text-red-200" />
                     ) : (
@@ -524,14 +521,14 @@ function ResultPanel({
             </div>
 
             <div className="grid gap-3">
-                <ResultRow label="Reference" value={result.transaction_reference} mono />
-                <ResultRow label="Amount" value={formatCurrency(amount)} />
+                <ResultRow label="Referensi" value={result.transaction_reference} mono />
+                <ResultRow label="Nominal" value={formatCurrency(amount)} />
                 <ResultRow
-                    label="Trained ML"
-                    value={result.tabular_ml_model_used ? "PAYSIM XGBOOST ACTIVE" : "NOT ACTIVE"}
+                    label="PaySim XGBoost"
+                    value={result.tabular_ml_model_used ? "PaySim XGBoost Aktif" : "Not Aktif"}
                 />
                 <ResultRow
-                    label="Tabular ML Score"
+                    label="Skor PaySim XGBoost"
                     value={
                         result.tabular_ml_score !== null && result.tabular_ml_score !== undefined
                             ? String(result.tabular_ml_score)
@@ -540,11 +537,11 @@ function ResultPanel({
                     mono
                 />
                 <ResultRow
-                    label="Internal Adaptive"
-                    value={result.internal_ml_model_used ? "Active" : "Not Active"}
+                    label="Model adaptif"
+                    value={result.internal_ml_model_used ? "Aktif" : "Not Aktif"}
                 />
                 <ResultRow
-                    label="Internal ML Score"
+                    label="Skor Model Adaptif"
                     value={
                         result.internal_ml_score !== null && result.internal_ml_score !== undefined
                             ? String(result.internal_ml_score)
@@ -553,32 +550,38 @@ function ResultPanel({
                     mono
                 />
                 <ResultRow
-                    label="Internal Version"
-                    value={compactInternalModelVersion(result.internal_model_version)}
+                    label="Versi model adaptif"
+                    value={compactInternalModelVersi(result.internal_model_version)}
                     mono
                 />
                 <ResultRow
-                    label="Ensemble Mode"
+                    label="Mode ensemble"
                     value={result.ensemble_mode || "-"}
                     mono
                 />
                 <ResultRow
-                    label="Model Version"
-                    value={result.tabular_model_version || "-"}
+                    label="Versi PaySim"
+                    value={compactModelVersi(result.tabular_model_version)}
                     mono
                 />
                 <ResultRow
-                    label="Alert Created"
-                    value={result.alert_created ? "YES" : "NO"}
+                    label="Peringatan dibuat"
+                    value={result.alert_created ? "Ya" : "Tidak"}
                 />
             </div>
         </div>
     );
 }
 
-function compactInternalModelVersion(value?: string | null) {
+function compactModelVersi(value?: string | null) {
     if (!value) return "-";
-    return value.replace("trustlens_internal_adaptive_random_forest_", "tl_rf_");
+    return value
+        .replace("paysim_xgboost_", "xgb_")
+        .replace("trustlens_internal_adaptive_random_forest_", "tl_rf_");
+}
+
+function compactInternalModelVersi(value?: string | null) {
+    return compactModelVersi(value);
 }
 
 function ResultRow({

@@ -25,7 +25,7 @@ cytoscape.use(coseBilkent);
 
 type GraphNode = {
     id: string;
-    label: "Account" | "Transaction" | "Device" | "Merchant" | "Country" | string;
+    label: "Akun" | "Transaksi" | "Perangkat" | "Merchant" | "Negara" | string;
     title?: string;
     risk_level?: string;
     fraud_score?: number;
@@ -271,8 +271,8 @@ export default function GraphExplorerPage() {
         };
     }, [graph]);
 
-    const transactionNodes = graph.nodes.filter((node) => node.label === "Transaction");
-    const highRiskNodes = graph.nodes.filter((node) => node.risk_level === "high");
+    const transactionNodes = graph.nodes.filter((node) => node.label === "Transaksi");
+    const tinggiRisikoNodes = graph.nodes.filter((node) => node.risk_level === "high");
 
     return (
         <div className="space-y-8">
@@ -280,19 +280,18 @@ export default function GraphExplorerPage() {
                 <div>
                     <div className="mb-4 flex items-center gap-2">
                         <Badge className="rounded-sm bg-cyan-400/10 text-cyan-300 hover:bg-cyan-400/10">
-                            GRAPH INTELLIGENCE
+                            Intelijen relasi
                         </Badge>
                         <span className="text-xs uppercase tracking-[0.14em] text-slate-600">
-                            / Neo4j / Entity Network
+                            / Neo4j / Jaringan entitas
                         </span>
                     </div>
 
                     <h1 className="text-5xl font-black tracking-tight text-slate-100">
-                        GRAPH EXPLORER
+                        Eksplorasi Relasi
                     </h1>
                     <p className="mt-3 max-w-3xl text-base leading-7 text-slate-400">
-                        Visualize hidden relations between accounts, transactions, devices,
-                        merchants, and countries to expose fraud networks beyond tabular rules.
+                        Lihat relasi akun, transaksi, perangkat, merchant, dan negara untuk membantu menemukan pola fraud.
                     </p>
                 </div>
 
@@ -303,7 +302,7 @@ export default function GraphExplorerPage() {
                         className="rounded-sm border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                     >
                         <RefreshCcw className="mr-2 h-4 w-4" />
-                        Reload
+                        Muat ulang
                     </Button>
 
                     <Button
@@ -316,25 +315,25 @@ export default function GraphExplorerPage() {
                         ) : (
                             <DatabaseZap className="mr-2 h-4 w-4" />
                         )}
-                        Sync Neo4j
+                        Sinkron Neo4j
                     </Button>
                 </div>
             </section>
 
             <section className="grid gap-6 md:grid-cols-3">
                 <GraphMetric
-                    label="Graph Nodes"
+                    label="Node relasi"
                     value={graph.nodes.length}
                     icon={<Network className="h-8 w-8 text-cyan-300" />}
                 />
                 <GraphMetric
-                    label="Graph Edges"
+                    label="Edge relasi"
                     value={graph.edges.length}
                     icon={<GitBranch className="h-8 w-8 text-emerald-300" />}
                 />
                 <GraphMetric
-                    label="High Risk Nodes"
-                    value={highRiskNodes.length}
+                    label="Node risiko tinggi"
+                    value={tinggiRisikoNodes.length}
                     icon={<ShieldAlert className="h-8 w-8 text-red-200" />}
                 />
             </section>
@@ -345,10 +344,10 @@ export default function GraphExplorerPage() {
                         <div className="flex flex-wrap items-center justify-between gap-4 border-b border-white/10 bg-white/[0.04] px-6 py-4">
                             <div>
                                 <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
-                                    Entity Relationship Canvas
+                                    Kanvas relasi entitas
                                 </h2>
                                 <p className="mt-1 text-sm text-slate-500">
-                                    {transactionNodes.length} transaction vectors rendered
+                                    {transactionNodes.length} transaksi ditampilkan
                                 </p>
                             </div>
 
@@ -374,16 +373,16 @@ export default function GraphExplorerPage() {
                             {loading && (
                                 <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#050b18]/80 text-slate-400">
                                     <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-300" />
-                                    Loading graph intelligence...
+                                    Memuat relasi...
                                 </div>
                             )}
 
                             {graph.nodes.length === 0 && !loading && (
                                 <div className="absolute inset-0 z-10 flex flex-col items-center justify-center text-center text-slate-500">
                                     <Network className="mb-4 h-10 w-10 text-slate-600" />
-                                    <p>No graph data available.</p>
+                                    <p>Belum ada data relasi.</p>
                                     <p className="mt-2 text-sm">
-                                        Click Sync Neo4j to build the entity network.
+                                        Click Sinkron Neo4j to build the entity network.
                                     </p>
                                 </div>
                             )}
@@ -396,42 +395,42 @@ export default function GraphExplorerPage() {
                 <div className="space-y-6">
                     <Card className="trust-panel rounded-md border-cyan-300/10 text-slate-100">
                         <CardContent className="p-6">
-                            <p className="trust-label">Legend</p>
+                            <p className="trust-label">Legenda</p>
 
                             <div className="mt-5 space-y-3">
-                                <LegendItem color="bg-sky-400" label="Account" />
-                                <LegendItem color="bg-cyan-300" label="Transaction" />
-                                <LegendItem color="bg-violet-400" label="Device" />
-                                <LegendItem color="bg-emerald-400" label="Merchant" />
-                                <LegendItem color="bg-yellow-300" label="Country" />
-                                <LegendItem color="bg-red-300" label="High Risk Entity" />
+                                <LegendaItem color="bg-sky-400" label="Akun" />
+                                <LegendaItem color="bg-cyan-300" label="Transaksi" />
+                                <LegendaItem color="bg-violet-400" label="Perangkat" />
+                                <LegendaItem color="bg-emerald-400" label="Merchant" />
+                                <LegendaItem color="bg-yellow-300" label="Negara" />
+                                <LegendaItem color="bg-red-300" label="Entitas risiko tinggi" />
                             </div>
                         </CardContent>
                     </Card>
 
                     <Card className="trust-panel rounded-md border-cyan-300/10 text-slate-100">
                         <CardContent className="p-6">
-                            <p className="trust-label">Selected Node</p>
+                            <p className="trust-label">Node dipilih</p>
 
                             {!selectedNode ? (
                                 <div className="mt-5 rounded-sm border border-white/10 bg-[#050b18] p-5 text-sm leading-6 text-slate-500">
-                                    Select a node on the graph canvas to inspect metadata.
+                                    Pilih node pada kanvas untuk melihat detail.
                                 </div>
                             ) : (
                                 <div className="mt-5 space-y-3">
-                                    <NodeInfo label="Type" value={selectedNode.label} />
-                                    <NodeInfo label="Title" value={String(selectedNode.title || selectedNode.id)} />
-                                    <NodeInfo label="Risk" value={String(selectedNode.risk_level || "-")} />
+                                    <NodeInfo label="Tipe" value={selectedNode.label} />
+                                    <NodeInfo label="Nama" value={String(selectedNode.title || selectedNode.id)} />
+                                    <NodeInfo label="Risiko" value={String(selectedNode.risk_level || "-")} />
                                     {selectedNode.fraud_score !== undefined && (
                                         <NodeInfo
-                                            label="Fraud Score"
+                                            label="Skor Fraud"
                                             value={String(selectedNode.fraud_score)}
                                         />
                                     )}
                                     {selectedNode.status !== undefined && (
                                         <NodeInfo label="Status" value={String(selectedNode.status)} />
                                     )}
-                                    <NodeInfo label="Node ID" value={selectedNode.id} mono />
+                                    <NodeInfo label="ID node" value={selectedNode.id} mono />
                                 </div>
                             )}
                         </CardContent>
@@ -439,12 +438,12 @@ export default function GraphExplorerPage() {
 
                     <Card className="trust-panel rounded-md border-cyan-300/10 text-slate-100">
                         <CardContent className="p-6">
-                            <p className="trust-label">Graph Protocol</p>
+                            <p className="trust-label">Detail graph</p>
                             <div className="mt-5 space-y-3 text-sm text-slate-400">
-                                <ProtocolRow label="Source" value="PostgreSQL + Neo4j" />
+                                <ProtocolRow label="Sumber" value="PostgreSQL + Neo4j" />
                                 <ProtocolRow label="Layout" value="COSE Bilkent" />
-                                <ProtocolRow label="Mode" value="Fraud Network" />
-                                <ProtocolRow label="Status" value="Active" active />
+                                <ProtocolRow label="Mode" value="Jaringan fraud" />
+                                <ProtocolRow label="Status" value="Aktif" active />
                             </div>
                         </CardContent>
                     </Card>
@@ -478,7 +477,7 @@ function GraphMetric({
     );
 }
 
-function LegendItem({ color, label }: { color: string; label: string }) {
+function LegendaItem({ color, label }: { color: string; label: string }) {
     return (
         <div className="flex items-center justify-between rounded-sm border border-white/10 bg-[#050b18] px-4 py-3">
             <span className="text-sm text-slate-300">{label}</span>

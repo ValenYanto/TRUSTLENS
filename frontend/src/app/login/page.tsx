@@ -1,26 +1,23 @@
 "use client";
 
+import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Loader2, ShieldCheck } from "lucide-react";
-import { toast } from "sonner";
-import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Loader2 } from "lucide-react";
+import { useForm } from "react-hook-form";
+import { toast } from "sonner";
 
-import { login } from "@/lib/auth";
-import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
+import { AppLogo } from "@/components/layout/app-logo";
+import { ThemeToggle } from "@/components/layout/theme-toggle";
 import { Button } from "@/components/ui/button";
-import {
-    Card,
-    CardContent,
-    CardHeader,
-    CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { login } from "@/lib/auth";
+import { loginSchema, type LoginFormValues } from "@/lib/validations/auth";
 
 export default function LoginPage() {
     const router = useRouter();
-
     const {
         register,
         handleSubmit,
@@ -36,116 +33,81 @@ export default function LoginPage() {
     async function onSubmit(values: LoginFormValues) {
         try {
             await login(values.email, values.password);
-            toast.success("Access granted. Welcome to TrustLens.");
+            toast.success("Berhasil masuk ke TrustLens");
             router.push("/dashboard");
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Login failed");
+            toast.error(error instanceof Error ? error.message : "Gagal masuk");
         }
     }
 
     return (
-        <main className="relative min-h-screen overflow-hidden bg-[#050b18] text-slate-100">
-            <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,_rgba(21,184,255,0.16),_transparent_34%),linear-gradient(135deg,_rgba(21,184,255,0.06),_transparent_35%)]" />
-            <div className="absolute inset-0 trust-grid-bg opacity-40" />
+        <main className="min-h-screen bg-slate-50 text-slate-950 dark:bg-slate-950 dark:text-slate-100">
+            <header className="mx-auto flex h-16 max-w-7xl items-center justify-between px-4 md:px-6">
+                <AppLogo />
+                <div className="flex items-center gap-2">
+                    <ThemeToggle />
+                    <Button asChild variant="ghost" className="rounded-md">
+                        <Link href="/">Beranda</Link>
+                    </Button>
+                </div>
+            </header>
 
-            <div className="relative flex min-h-screen flex-col items-center justify-center px-4">
-                <div className="mb-8 text-center">
-                    <h1 className="text-4xl font-black tracking-tight text-cyan-400">
-                        TRUSTLENS
+            <section className="mx-auto grid min-h-[calc(100vh-4rem)] max-w-7xl items-center gap-10 px-4 py-10 md:px-6 lg:grid-cols-[0.95fr_1.05fr]">
+                <div className="hidden lg:block">
+                    <p className="text-sm font-semibold uppercase tracking-wide text-cyan-700 dark:text-cyan-300">Akses analyst</p>
+                    <h1 className="mt-4 text-4xl font-bold tracking-tight text-slate-950 dark:text-white">
+                        Masuk ke TrustLens
                     </h1>
-                    <div className="mt-3 inline-flex items-center gap-2 rounded-full bg-white/10 px-4 py-1 text-xs uppercase tracking-[0.1em] text-emerald-300">
-                        <span className="h-2 w-2 rounded-full bg-emerald-400" />
-                        Secure Protocol Active
+                    <p className="mt-5 max-w-xl text-base leading-7 text-slate-600 dark:text-slate-400">
+                        Pantau risiko transaksi dan investigasi fraud dari satu tempat.
+                    </p>
+                    <div className="mt-8 grid max-w-xl gap-3">
+                        {["Skor fraud berbasis risiko", "Pelabelan oleh analyst", "Intelijen relasi dan lintas negara"].map((item) => (
+                            <div key={item} className="rounded-md border border-slate-200 bg-white p-4 text-sm font-medium text-slate-700 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-300">
+                                {item}
+                            </div>
+                        ))}
                     </div>
                 </div>
 
-                <Card className="w-full max-w-xl overflow-hidden rounded-sm border-cyan-300/10 bg-[#0b1220]/95 text-slate-100 shadow-2xl trust-glow">
-                    <CardHeader className="border-b border-white/10 bg-white/[0.04]">
-                        <div className="flex items-center justify-between">
-                            <CardTitle className="trust-label text-slate-300">
-                                System Authentication
-                            </CardTitle>
-                            <span className="trust-mono text-xs font-medium text-cyan-400">
-                                NODE_TX_4492
-                            </span>
-                        </div>
-                    </CardHeader>
-
-                    <CardContent className="p-8">
-                        <div className="mb-8 rounded-sm border border-red-300/30 bg-red-400/10 p-5">
-                            <div className="flex gap-4">
-                                <ShieldCheck className="mt-1 h-6 w-6 text-red-200" />
-                                <div>
-                                    <h2 className="font-bold uppercase tracking-[0.08em] text-red-100">
-                                        Level 4 Security Clearance Required
-                                    </h2>
-                                    <p className="mt-2 text-sm leading-6 text-slate-300">
-                                        Unauthorized access attempts are logged and reported to the
-                                        TrustLens intelligence core.
-                                    </p>
-                                </div>
-                            </div>
-                        </div>
-
-                        <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
-                            <div className="space-y-2">
-                                <Label className="trust-label">Personnel System ID</Label>
-                                <Input
-                                    type="email"
-                                    className="h-14 rounded-sm border-white/10 bg-[#050b18] text-slate-100 placeholder:text-slate-600"
-                                    placeholder="analyst@trustlens.dev"
-                                    {...register("email")}
-                                />
-                                {errors.email && (
-                                    <p className="text-sm text-red-200">{errors.email.message}</p>
-                                )}
-                            </div>
-
-                            <div className="space-y-2">
-                                <Label className="trust-label">Biometric Token Hash</Label>
-                                <Input
-                                    type="password"
-                                    className="h-14 rounded-sm border-white/10 bg-[#050b18] text-slate-100 placeholder:text-slate-600"
-                                    placeholder="Enter secure token"
-                                    {...register("password")}
-                                />
-                                {errors.password && (
-                                    <p className="text-sm text-red-200">
-                                        {errors.password.message}
-                                    </p>
-                                )}
-                            </div>
-
-                            <Button
-                                type="submit"
-                                className="h-14 w-full rounded-sm bg-cyan-400 font-bold uppercase tracking-[0.1em] text-[#06111f] hover:bg-cyan-300"
-                                disabled={isSubmitting}
-                            >
-                                {isSubmitting ? (
-                                    <>
-                                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                                        Initializing...
-                                    </>
-                                ) : (
-                                    "Initialize Decryption"
-                                )}
-                            </Button>
-
-                            <Button
-                                type="button"
-                                variant="outline"
-                                className="h-12 w-full rounded-sm border-white/10 bg-transparent uppercase tracking-[0.1em] text-slate-400 hover:bg-white/5 hover:text-slate-100"
-                            >
-                                Emergency Access Bypass
-                            </Button>
-
-                            <p className="text-center text-xs text-slate-600">
-                                Demo credentials: valen@trustlens.dev / password123
+                <Card className="mx-auto w-full max-w-lg border-slate-200 bg-white shadow-xl shadow-slate-200/70 dark:border-white/10 dark:bg-slate-900 dark:shadow-black/20">
+                    <CardContent className="p-6 md:p-8">
+                        <div>
+                            <h2 className="text-2xl font-bold tracking-tight text-slate-950 dark:text-white">Masuk ke TrustLens</h2>
+                            <p className="mt-2 text-sm leading-6 text-slate-600 dark:text-slate-400">
+                                Pantau risiko transaksi dan investigasi fraud dari satu tempat.
                             </p>
+                        </div>
+
+                        <form onSubmit={handleSubmit(onSubmit)} className="mt-8 space-y-5">
+                            <div className="space-y-2">
+                                <Label htmlFor="email">Email</Label>
+                                <Input id="email" type="email" placeholder="analyst@trustlens.dev" {...register("email")} />
+                                {errors.email && <p className="text-sm text-red-600 dark:text-red-300">{errors.email.message}</p>}
+                            </div>
+
+                            <div className="space-y-2">
+                                <Label htmlFor="password">Kata sandi</Label>
+                                <Input id="password" type="password" placeholder="Masukkan kata sandi" {...register("password")} />
+                                {errors.password && <p className="text-sm text-red-600 dark:text-red-300">{errors.password.message}</p>}
+                            </div>
+
+                            <Button type="submit" disabled={isSubmitting} className="h-11 w-full rounded-md bg-cyan-700 text-white hover:bg-cyan-800 dark:bg-cyan-400 dark:text-slate-950 dark:hover:bg-cyan-300">
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Masuk
+                            </Button>
                         </form>
+
+                        <div className="mt-6 rounded-md border border-slate-200 bg-slate-50 p-4 text-sm text-slate-600 dark:border-white/10 dark:bg-white/[0.03] dark:text-slate-400">
+                            Akun demo: <span className="font-medium text-slate-900 dark:text-slate-200">valen@trustlens.dev / password123</span>
+                        </div>
+
+                        <p className="mt-6 text-center text-sm text-slate-600 dark:text-slate-400">
+                            Belum punya akun? <Link href="/register" className="font-medium text-cyan-700 hover:underline dark:text-cyan-300">Daftar</Link>
+                        </p>
                     </CardContent>
                 </Card>
-            </div>
+            </section>
         </main>
     );
 }

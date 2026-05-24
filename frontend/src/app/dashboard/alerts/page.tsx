@@ -29,10 +29,10 @@ type AlertItem = {
     severity: "low" | "medium" | "high" | "critical";
     risk_score: number;
     reason: string | null;
-    status: "open" | "investigating" | "resolved" | "dismissed";
+    status: "terbuka" | "investigating" | "selesai" | "diabaikan";
     assigned_to: string | null;
     created_at: string;
-    resolved_at: string | null;
+    selesai_at: string | null;
     transaction?: {
         id: string;
         transaction_reference: string;
@@ -49,11 +49,11 @@ type AlertItem = {
 type AlertsResponse = {
     total: number;
     limit: number;
-    offset: number;
+    darifset: number;
     items: AlertItem[];
 };
 
-const statusOptions = ["all", "open", "investigating", "resolved", "dismissed"] as const;
+const statusOptions = ["all", "terbuka", "investigating", "selesai", "diabaikan"] as const;
 const severityOptions = ["all", "critical", "high", "medium", "low"] as const;
 
 export default function AlertsPage() {
@@ -82,7 +82,7 @@ export default function AlertsPage() {
             setAlerts(data.items);
             setTotal(data.total);
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to load alerts");
+            toast.error(error instanceof Error ? error.message : "Gagal memuat peringatan");
         } finally {
             setLoading(false);
         }
@@ -96,10 +96,10 @@ export default function AlertsPage() {
                 method: "PATCH",
             });
 
-            toast.success(`Alert marked as ${nextStatus}`);
+            toast.success(`Status peringatan menjadi ${nextStatus}`);
             await loadAlerts();
         } catch (error) {
-            toast.error(error instanceof Error ? error.message : "Failed to update alert");
+            toast.error(error instanceof Error ? error.message : "Gagal memperbarui peringatan");
         } finally {
             setUpdatingId(null);
         }
@@ -110,8 +110,8 @@ export default function AlertsPage() {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [queryPath]);
 
-    const criticalCount = alerts.filter((alert) => alert.severity === "critical").length;
-    const openCount = alerts.filter((alert) => alert.status === "open").length;
+    const kritisCount = alerts.filter((alert) => alert.severity === "critical").length;
+    const terbukaCount = alerts.filter((alert) => alert.status === "terbuka").length;
     const investigatingCount = alerts.filter((alert) => alert.status === "investigating").length;
 
     return (
@@ -120,19 +120,18 @@ export default function AlertsPage() {
                 <div>
                     <div className="mb-4 flex items-center gap-2">
                         <Badge className="rounded-sm bg-red-400/10 text-red-200 hover:bg-red-400/10">
-                            SECURITY ALERT STREAM
+                            Peringatan fraud
                         </Badge>
                         <span className="text-xs uppercase tracking-[0.14em] text-slate-600">
-                            / Sentinel Core / Threat Queue
+                            / Antrian investigasi
                         </span>
                     </div>
 
                     <h1 className="text-5xl font-black tracking-tight text-slate-100">
-                        ALERTS
+                        Peringatan
                     </h1>
                     <p className="mt-3 max-w-3xl text-base leading-7 text-slate-400">
-                        Investigate high-risk fraud vectors, update alert status, and monitor
-                        security decisions produced by the TrustLens scoring engine.
+                        Tinjau peringatan fraud, ubah status investigasi, dan lihat alasan risiko dari mesin scoring TrustLens.
                     </p>
                 </div>
 
@@ -141,25 +140,25 @@ export default function AlertsPage() {
                     className="rounded-sm bg-cyan-400 font-bold text-[#06111f] hover:bg-cyan-300"
                 >
                     <RefreshCcw className="mr-2 h-4 w-4" />
-                    Refresh Stream
+                    Muat ulang
                 </Button>
             </section>
 
             <section className="grid gap-6 md:grid-cols-3">
                 <AlertMetric
-                    label="Critical Alerts"
-                    value={criticalCount}
+                    label="Peringatan kritis"
+                    value={kritisCount}
                     icon={<Siren className="h-8 w-8 text-red-200" />}
                     tone="red"
                 />
                 <AlertMetric
-                    label="Open Cases"
-                    value={openCount}
+                    label="Kasus terbuka"
+                    value={terbukaCount}
                     icon={<ShieldAlert className="h-8 w-8 text-cyan-300" />}
                     tone="cyan"
                 />
                 <AlertMetric
-                    label="Investigating"
+                    label="Investigasi"
                     value={investigatingCount}
                     icon={<Eye className="h-8 w-8 text-emerald-300" />}
                     tone="emerald"
@@ -167,7 +166,7 @@ export default function AlertsPage() {
             </section>
 
             <section className="grid gap-4 xl:grid-cols-2">
-                <FilterPanel title="Status Filter" icon={<Filter className="h-4 w-4" />}>
+                <FilterPanel title="Filter status" icon={<Filter className="h-4 w-4" />}>
                     <div className="flex flex-wrap gap-2">
                         {statusOptions.map((option) => (
                             <FilterButton
@@ -181,7 +180,7 @@ export default function AlertsPage() {
                     </div>
                 </FilterPanel>
 
-                <FilterPanel title="Severity Filter" icon={<AlertOctagon className="h-4 w-4" />}>
+                <FilterPanel title="Filter tingkat" icon={<AlertOctagon className="h-4 w-4" />}>
                     <div className="flex flex-wrap gap-2">
                         {severityOptions.map((option) => (
                             <FilterButton
@@ -200,8 +199,8 @@ export default function AlertsPage() {
                 <CardContent className="p-0">
                     <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
                         <div className="text-sm uppercase tracking-[0.14em] text-slate-400">
-                            Threat Queue: <span className="font-bold text-red-200">{total}</span>
-                            <span className="ml-6 text-slate-600">Mode: Analyst Review</span>
+                            Antrian: <span className="font-bold text-red-200">{total}</span>
+                            <span className="ml-6 text-slate-600">Mode: review analyst</span>
                         </div>
                         <AlertOctagon className="h-4 w-4 text-red-200" />
                     </div>
@@ -209,11 +208,11 @@ export default function AlertsPage() {
                     {loading ? (
                         <div className="flex h-80 items-center justify-center text-slate-400">
                             <Loader2 className="mr-2 h-5 w-5 animate-spin text-cyan-300" />
-                            Loading alert stream...
+                            Memuat peringatan...
                         </div>
                     ) : alerts.length === 0 ? (
                         <div className="p-10 text-center text-slate-500">
-                            No alerts matched your filter.
+                            Tidak ada peringatan sesuai filter.
                         </div>
                     ) : (
                         <div className="divide-y divide-white/5">
@@ -261,7 +260,7 @@ function AlertMetric({
                     {icon}
                 </div>
                 <p className="mt-4 text-xs uppercase tracking-[0.1em] text-slate-600">
-                    Live from alert engine
+                    Dari mesin peringatan
                 </p>
             </CardContent>
         </Card>
@@ -278,7 +277,7 @@ function FilterPanel({
     children: React.ReactNode;
 }) {
     return (
-        <div className="trust-panel-soft rounded-md p-4">
+        <div className="trust-panel-sdarit rounded-md p-4">
             <div className="mb-3 flex items-center justify-between">
                 <p className="trust-label">{title}</p>
                 <span className="text-slate-500">{icon}</span>
@@ -347,22 +346,22 @@ function AlertRow({
                     </h3>
 
                     <p className="mt-2 max-w-4xl text-sm leading-6 text-slate-400">
-                        {alert.reason || "Suspicious fraud vector detected by TrustLens engine."}
+                        {alert.reason || "Pola mencurigakan terdeteksi oleh TrustLens."}
                     </p>
 
                     {alert.transaction && (
                         <div className="mt-5 grid gap-3 md:grid-cols-4">
-                            <InfoBox label="Reference" value={alert.transaction.transaction_reference} mono />
+                            <InfoBox label="Referensi" value={alert.transaction.transaction_reference} mono />
                             <InfoBox
-                                label="Amount"
+                                label="Nominal"
                                 value={formatCurrency(alert.transaction.amount, alert.transaction.currency)}
                             />
                             <InfoBox
-                                label="Route"
+                                label="Rute"
                                 value={`${alert.transaction.source_country} → ${alert.transaction.destination_country}`}
                                 mono
                             />
-                            <InfoBox label="Fraud Score" value={`${Math.round(alert.risk_score * 100)}`} mono />
+                            <InfoBox label="Skor Fraud" value={`${Math.round(alert.risk_score * 100)}`} mono />
                         </div>
                     )}
                 </div>
@@ -375,27 +374,27 @@ function AlertRow({
                         className="rounded-sm border-cyan-300/20 bg-cyan-400/10 text-cyan-200 hover:bg-cyan-400/20"
                     >
                         <Clock className="mr-2 h-4 w-4" />
-                        Investigate
+                        Investigasi
                     </Button>
 
                     <Button
-                        disabled={updating || alert.status === "resolved"}
-                        onClick={() => onUpdateStatus(alert.id, "resolved")}
+                        disabled={updating || alert.status === "selesai"}
+                        onClick={() => onUpdateStatus(alert.id, "selesai")}
                         variant="outline"
                         className="rounded-sm border-emerald-300/20 bg-emerald-400/10 text-emerald-200 hover:bg-emerald-400/20"
                     >
                         <CheckCircle2 className="mr-2 h-4 w-4" />
-                        Resolve
+                        Selesaikan
                     </Button>
 
                     <Button
-                        disabled={updating || alert.status === "dismissed"}
-                        onClick={() => onUpdateStatus(alert.id, "dismissed")}
+                        disabled={updating || alert.status === "diabaikan"}
+                        onClick={() => onUpdateStatus(alert.id, "diabaikan")}
                         variant="outline"
                         className="rounded-sm border-white/10 bg-white/5 text-slate-300 hover:bg-white/10"
                     >
                         <XCircle className="mr-2 h-4 w-4" />
-                        Dismiss
+                        Abaikan
                     </Button>
                 </div>
             </div>
