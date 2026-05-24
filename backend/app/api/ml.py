@@ -11,6 +11,7 @@ from app.ml.continual.adaptive_trainer import (
     run_adaptive_retraining,
 )
 from app.ml.training.train_trustlens import train_trustlens_adaptive_model
+from app.ml.training.train_elliptic_graphsage import train_elliptic_graphsage
 
 router = APIRouter(prefix="/ml", tags=["Machine Learning"])
 
@@ -120,6 +121,28 @@ def train_trustlens_model(
             "message": "TrustLens internal adaptive model trained successfully",
             "result": result,
         }
+
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc))
+
+@router.post("/train/elliptic-graphsage")
+def train_elliptic_graphsage_model(
+    limit_nodes: int | None = Query(default=20000, ge=1000),
+    epochs: int = Query(default=5, ge=1, le=100),
+):
+    try:
+        result = train_elliptic_graphsage(
+            limit_nodes=limit_nodes,
+            epochs=epochs,
+        )
+
+        return {
+            "message": "Elliptic GraphSAGE model trained successfully",
+            "result": result,
+        }
+
+    except FileNotFoundError as exc:
+        raise HTTPException(status_code=404, detail=str(exc))
 
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc))
