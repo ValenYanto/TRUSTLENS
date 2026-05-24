@@ -49,6 +49,16 @@ type ModelMetrics = {
     version?: string;
     created_at?: string;
     warning?: string | null;
+    graph_nodes?: number;
+    graph_edges?: number;
+    labelled_count?: number;
+    validation_rows?: number;
+    hidden_dim?: number;
+    epochs?: number;
+};
+
+type MlModelsResponse = {
+    items: ModelMetrics[];
 };
 
 type MlStatusResponse = {
@@ -90,20 +100,22 @@ export default function MlMonitorPage() {
         useState<AdaptiveStatusResponse | null>(null);
     const [loading, setLoading] = useState(true);
     const [trainingAction, setTrainingAction] = useState<string | null>(null);
+    const [models, setModels] = useState<ModelMetrics[]>([]);
 
     async function loadData() {
         setLoading(true);
 
         try {
-            const [statusData, metricsData, adaptiveData] = await Promise.all([
+            const [statusData, metricsData, adaptiveData, modelsData] = await Promise.all([
                 apiFetch<MlStatusResponse>("/ml/status"),
                 apiFetch<MlMetricsResponse>("/ml/metrics"),
                 apiFetch<AdaptiveStatusResponse>("/ml/adaptive/status"),
+                apiFetch<MlModelsResponse>("/ml/models"),
             ]);
-
             setMlStatus(statusData);
             setMlMetrics(metricsData);
             setAdaptiveStatus(adaptiveData);
+            setModels(modelsData.items);
         } catch (error) {
             toast.error(error instanceof Error ? error.message : "Failed to load ML monitor");
         } finally {
@@ -190,6 +202,10 @@ export default function MlMonitorPage() {
             )
         );
     }, [adaptiveStatus]);
+
+    const graphModel = models.find(
+        (model) => model.dataset_name === "elliptic" && model.model_name === "graphsage"
+    );
 
     if (loading) {
         return (
@@ -465,6 +481,82 @@ export default function MlMonitorPage() {
                     </CardContent>
                 </Card>
             </section>
+
+            <section className="grid gap-8 xl:grid-cols-[1fr_390px]">
+                <Card className="trust-panel overflow-hidden rounded-md border-cyan-300/10 text-slate-100">
+                    <CardContent className="p-0">
+                        <div className="flex items-center justify-between border-b border-white/10 bg-white/[0.04] px-6 py-4">
+                            <div>
+                                <h2 className="font-bold uppercase tracking-[0.12em] text-slate-200">
+                                    Graph ML Prototype
+                                </h2>
+                                <p className="mt-1 text-sm text-slate-500">
+                                    Elliptic GraphSAGE model for graph-based fraud learning evidence.
+                                </p>
+                            </div>
+                            <GitBranch className="h-5 w-5 text-cyan-300" />
+                        </div>
+
+                        {!graphModel ? (
+                            <div className="p-8 text-sm text-slate-500">
+                                No GraphSAGE artifact found yet. Train Elliptic GraphSAGE from backend first.
+                            </div>
+                        ) : (
+                            <div className="grid gap-5 p-6 md:grid-cols-2">
+                                <InfoBox label="Dataset" value={graphModel.dataset_name || "-"} />
+                                <InfoBox label="Model" value={graphModel.model_name || "-"} />
+                                <InfoBox label="Model Family" value={graphModel.model_family || "-"} />
+                                <InfoBox label="Version" value={compactVersion(graphModel.version)} mono />
+                                <InfoBox label="Graph Nodes" value={String(graphModel.graph_nodes ?? "-")} mono />
+                                <InfoBox label="Graph Edges" value={String(graphModel.graph_edges ?? "-")} mono />
+                                <InfoBox label="ROC-AUC" value={formatMetric(graphModel.roc_auc)} mono />
+                                <InfoBox label="PR-AUC" value={formatMetric(graphModel.pr_auc)} mono />
+                                <InfoBox label="Illicit Recall" value={formatMetric(graphModel.recall)} mono />
+                                <InfoBox label="Illicit F1" value={formatMetric(graphModel.f1)} mono />
+                            </div>
+                        )}
+
+                        {graphModel?.warning && (
+                            <div className="mx-6 mb-6 rounded-sm border border-orange-300/20 bg-orange-400/10 p-4 text-sm leading-6 text-orange-100">
+                                {graphModel.warning}
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+
+                <Card className="trust-panel rounded-md border-cyan-300/10 text-slate-100">
+                    <CardContent className="p-6">
+                        <p className="trust-label">Graph Learning Status</p>
+
+                        <div className="mt-6 space-y-3">
+                            <InfoBox
+                                label="Architecture"
+                                value="Manual PyTorch GraphSAGE"
+                            />
+                            <InfoBox
+                                label="Training Epochs"
+                                value={String(graphModel?.epochs ?? "-")}
+                                mono
+                            />
+                            <InfoBox
+                                label="Hidden Dim"
+                                value={String(graphModel?.hidden_dim ?? "-")}
+                                mono
+                            />
+                            <InfoBox
+                                label="Labelled Nodes"
+                                value={String(graphModel?.labelled_count ?? "-")}
+                                mono
+                            />
+                        </div>
+
+                        <div className="mt-6 rounded-sm border border-cyan-300/10 bg-cyan-400/5 p-4 text-sm leading-6 text-slate-400">
+                            This model is used as graph-learning evidence. Production TrustLens scoring
+                            still relies on rule guard, PaySim XGBoost, and internal adaptive model.
+                        </div>
+                    </CardContent>
+                </Card>
+            </section>
         </div>
     );
 }
@@ -552,5 +644,6 @@ function compactVersion(value?: string | null) {
 
     return value
         .replace("paysim_xgboost_", "xgb_")
-        .replace("trustlens_internal_adaptive_random_forest_", "tl_rf_");
+        .replace("trustlens_internal_adaptive_random_forest_", "tl_rf_")
+        .replace("elliptic_graphsage_", "elliptic_gs_");
 }
