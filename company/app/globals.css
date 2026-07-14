@@ -4,7 +4,58 @@
 @custom-variant dark (&:is(.dark *));
 
 :root {
+  color-scheme: light;
+
   --radius: 0.9rem;
+
+  --background: oklch(0.985 0.006 225);
+  --foreground: oklch(0.19 0.032 247);
+
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.19 0.032 247);
+
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.19 0.032 247);
+
+  --primary: oklch(0.56 0.135 168);
+  --primary-foreground: oklch(0.99 0.005 220);
+
+  --secondary: oklch(0.955 0.015 230);
+  --secondary-foreground: oklch(0.24 0.032 247);
+
+  --muted: oklch(0.955 0.012 230);
+  --muted-foreground: oklch(0.5 0.03 238);
+
+  --accent: oklch(0.945 0.028 168);
+  --accent-foreground: oklch(0.25 0.055 168);
+
+  --destructive: oklch(0.62 0.21 25);
+  --destructive-foreground: oklch(0.985 0.005 20);
+
+  --border: oklch(0.885 0.018 230);
+  --input: oklch(0.865 0.022 230);
+  --ring: oklch(0.56 0.135 168);
+
+  --brand-cyan: oklch(0.66 0.135 205);
+  --brand-blue: oklch(0.58 0.16 245);
+
+  --success: oklch(0.61 0.15 150);
+  --warning: oklch(0.72 0.16 80);
+
+  --risk-low: oklch(0.61 0.15 150);
+  --risk-medium: oklch(0.72 0.16 80);
+  --risk-high: oklch(0.62 0.21 25);
+
+  --logo-surface: oklch(0.17 0.032 247);
+  --logo-ink: oklch(0.8 0.15 169);
+  --logo-border: oklch(0.35 0.07 169);
+
+  --logo-surface: oklch(0.19 0.042 247);
+  --logo-border: oklch(0.56 0.135 168 / 45%);
+}
+
+.dark {
+  color-scheme: dark;
 
   --background: oklch(0.125 0.025 248);
   --foreground: oklch(0.975 0.01 220);
@@ -43,6 +94,13 @@
   --risk-low: oklch(0.78 0.16 150);
   --risk-medium: oklch(0.82 0.15 80);
   --risk-high: oklch(0.67 0.2 25);
+
+  --logo-surface: oklch(0.1 0.025 248);
+  --logo-ink: oklch(0.82 0.15 169);
+  --logo-border: oklch(0.43 0.075 169);
+
+  --logo-surface: oklch(0.105 0.027 248);
+  --logo-border: oklch(0.79 0.155 169 / 32%);
 }
 
 @theme inline {
@@ -87,12 +145,19 @@
   --color-risk-medium: var(--risk-medium);
   --color-risk-high: var(--risk-high);
 
+  --color-logo-surface: var(--logo-surface);
+  --color-logo-ink: var(--logo-ink);
+  --color-logo-border: var(--logo-border);
+
   --radius-sm: calc(var(--radius) - 0.3rem);
   --radius-md: calc(var(--radius) - 0.15rem);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 0.25rem);
   --radius-2xl: calc(var(--radius) + 0.6rem);
   --radius-3xl: calc(var(--radius) + 1rem);
+
+  --color-logo-surface: var(--logo-surface);
+  --color-logo-border: var(--logo-border);
 }
 
 * {
@@ -135,6 +200,7 @@ a {
     );
 
   background-size: 28px 28px;
+
   mask-image: radial-gradient(circle at center, black, transparent 78%);
 }
 

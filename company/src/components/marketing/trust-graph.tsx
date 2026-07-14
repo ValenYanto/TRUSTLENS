@@ -30,7 +30,7 @@ export function TrustGraph() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <div className="relative overflow-hidden rounded-[2rem] border border-border bg-card shadow-2xl shadow-primary/5">
+    <div className="relative overflow-hidden rounded-4xl border border-border bg-card shadow-2xl shadow-primary/5">
       <div className="flex items-center justify-between border-b border-border px-5 py-4">
         <div>
           <p className="text-xs font-semibold uppercase tracking-[0.2em] text-muted-foreground">

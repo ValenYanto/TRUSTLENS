@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { DM_Sans, Manrope } from "next/font/google";
-import { Toaster } from "sonner";
+
+import { AppToaster } from "@/src/components/theme/app-toaster";
+import { ThemeProvider } from "@/src/components/theme/theme-provider";
 
 import "./globals.css";
 
@@ -17,13 +19,14 @@ const manrope = Manrope({
 });
 
 const siteUrl =
-  process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000";
+  process.env.NEXT_PUBLIC_SITE_URL ??
+  "http://localhost:3000";
 
 export const metadata: Metadata = {
   metadataBase: new URL(siteUrl),
 
   title: {
-    default: "TrustLens — Real-Time Fraud Intelligence",
+    default: "TrustLens: Real-Time Fraud Intelligence",
     template: "%s | TrustLens",
   },
 
@@ -41,7 +44,7 @@ export const metadata: Metadata = {
   ],
 
   openGraph: {
-    title: "TrustLens — Real-Time Fraud Intelligence",
+    title: "TrustLens: Real-Time Fraud Intelligence",
     description:
       "Mendeteksi fraud sebelum menjadi kerugian melalui Graph Neural Network dan Federated Learning.",
     type: "website",
@@ -51,7 +54,7 @@ export const metadata: Metadata = {
 
   twitter: {
     card: "summary_large_image",
-    title: "TrustLens — Real-Time Fraud Intelligence",
+    title: "TrustLens: Real-Time Fraud Intelligence",
     description:
       "Mendeteksi fraud sebelum menjadi kerugian melalui Graph Neural Network dan Federated Learning.",
   },
@@ -63,20 +66,20 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="id">
+    <html lang="id" suppressHydrationWarning>
       <body
         className={`${dmSans.variable} ${manrope.variable} min-h-svh antialiased`}
       >
-        {children}
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          disableTransitionOnChange
+          enableSystem
+        >
+          {children}
 
-        <Toaster
-          closeButton
-          position="top-right"
-          richColors
-          toastOptions={{
-            duration: 2000,
-          }}
-        />
+          <AppToaster />
+        </ThemeProvider>
       </body>
     </html>
   );
