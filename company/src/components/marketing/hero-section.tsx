@@ -45,7 +45,7 @@ export function HeroSection() {
               variant="outline"
             >
               <Sparkles className="mr-1.5 size-3.5" />
-              Terpilih dalam 480 Tim Digdaya x Hackathon Bank Indonesia 2026
+              Top 480 Tim Digdaya x Hackathon Bank Indonesia 2026
             </Badge>
 
             <h1 className="max-w-4xl font-display text-5xl leading-[0.98] font-extrabold tracking-[-0.055em] text-balance sm:text-6xl lg:text-7xl">
