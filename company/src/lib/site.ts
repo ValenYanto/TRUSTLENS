@@ -1,15 +1,19 @@
 const whatsappNumber =
-  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ?? "6282225572581";
+  process.env.NEXT_PUBLIC_WHATSAPP_NUMBER ??
+  "6282225572581";
 
 const whatsappMessage =
   "Halo Tim TrustLens, saya tertarik untuk mengetahui lebih lanjut mengenai peluang investasi atau kerja sama strategis dengan TrustLens. Boleh kita menjadwalkan diskusi singkat?";
 
 export const siteConfig = {
   name: "TrustLens",
+
   shortDescription:
     "Platform fraud intelligence real-time berbasis Graph Neural Network dan Federated Learning.",
 
-  siteUrl: process.env.NEXT_PUBLIC_SITE_URL ?? "http://localhost:3000",
+  siteUrl:
+    process.env.NEXT_PUBLIC_SITE_URL ??
+    "http://localhost:3000",
 
   productDemoUrl:
     process.env.NEXT_PUBLIC_PRODUCT_DEMO_URL ??
@@ -25,23 +29,23 @@ export const siteConfig = {
   navigation: [
     {
       label: "Masalah",
-      href: "#masalah",
+      href: "/#masalah",
     },
     {
       label: "Solusi",
-      href: "#solusi",
+      href: "/#solusi",
     },
     {
       label: "Teknologi",
-      href: "#teknologi",
+      href: "/#teknologi",
     },
     {
       label: "Produk",
-      href: "#produk",
+      href: "/#produk",
     },
     {
       label: "Investor",
-      href: "#investasi",
+      href: "/investors",
     },
   ],
 } as const;
