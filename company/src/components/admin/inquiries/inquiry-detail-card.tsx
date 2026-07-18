@@ -5,16 +5,13 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Clock3,
-  FileText,
   Globe2,
   Mail,
   MessageCircle,
   NotebookPen,
-  ShieldCheck,
   UserRound,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
   Card,
@@ -22,11 +19,10 @@ import {
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
-import { InquiryStatusBadge } from "@/src/components/admin/inquiries/inquiry-status-badge";
+import { InquiryNotesForm } from "@/src/components/admin/inquiries/inquiry-notes-form";
+import { InquiryStatusForm } from "@/src/components/admin/inquiries/inquiry-status-form";
 import type { InvestorInquiryDetail } from "@/src/lib/investor-inquiries/get-inquiry-detail";
 import {
-  getDocumentStatusLabel,
-  getEmailStatusLabel,
   getFocusAreaLabel,
   getInterestTypeLabel,
   getInvestmentRangeLabel,
@@ -224,11 +220,11 @@ export function InquiryDetailCard({
             />
 
             <DetailItem
+              fullWidth
               label="Preferensi tanggal diskusi"
               value={formatDate(
                 inquiry.preferredMeetingDate,
               )}
-              fullWidth
             />
           </CardContent>
         </Card>
@@ -260,134 +256,27 @@ export function InquiryDetailCard({
           </CardContent>
         </Card>
 
-        <Card>
-          <CardHeader className="border-b border-border">
-            <div className="flex items-center gap-3">
-              <div className="flex size-11 items-center justify-center rounded-xl bg-primary/10">
-                <FileText className="size-5 text-primary" />
-              </div>
-
-              <div>
-                <CardTitle>
-                  Catatan Internal
-                </CardTitle>
-
-                <p className="mt-1 text-sm text-muted-foreground">
-                  Catatan ini hanya terlihat oleh
-                  admin.
-                </p>
-              </div>
-            </div>
-          </CardHeader>
-
-          <CardContent className="pt-6">
-            <p className="whitespace-pre-wrap wrap-break-word text-sm leading-7 text-muted-foreground">
-              {inquiry.internalNotes ||
-                "Belum ada catatan internal."}
-            </p>
-
-            <p className="mt-5 text-xs text-muted-foreground">
-              Catatan internal dapat diperbarui pada
-              Stage 6B.
-            </p>
-          </CardContent>
-        </Card>
+        <InquiryNotesForm
+          inquiryCode={inquiry.inquiryCode}
+          internalNotes={inquiry.internalNotes}
+        />
       </div>
 
       <aside className="grid h-fit gap-6 xl:sticky xl:top-24">
-        <Card>
-          <CardHeader className="border-b border-border">
-            <CardTitle className="text-lg">
-              Status Inquiry
-            </CardTitle>
-          </CardHeader>
-
-          <CardContent className="grid gap-5 pt-6">
-            <div>
-              <p className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
-                Status saat ini
-              </p>
-
-              <InquiryStatusBadge
-                className="mt-3"
-                status={inquiry.status}
-              />
-            </div>
-
-            <div className="grid gap-3">
-              <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
-                <div className="flex items-center gap-2">
-                  <FileText className="size-4 text-muted-foreground" />
-
-                  <span className="text-sm">
-                    Dokumen PDF
-                  </span>
-                </div>
-
-                <Badge variant="secondary">
-                  {getDocumentStatusLabel(
-                    inquiry.documentStatus,
-                  )}
-                </Badge>
-              </div>
-
-              <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
-                <div className="flex items-center gap-2">
-                  <Mail className="size-4 text-muted-foreground" />
-
-                  <span className="text-sm">
-                    Pengiriman Email
-                  </span>
-                </div>
-
-                <Badge variant="secondary">
-                  {getEmailStatusLabel(
-                    inquiry.emailStatus,
-                  )}
-                </Badge>
-              </div>
-
-              <div className="flex items-center justify-between gap-4 rounded-xl border border-border p-3">
-                <div className="flex items-center gap-2">
-                  <ShieldCheck className="size-4 text-muted-foreground" />
-
-                  <span className="text-sm">
-                    Persetujuan Data
-                  </span>
-                </div>
-
-                <Badge
-                  variant={
-                    inquiry.consentAccepted
-                      ? "default"
-                      : "destructive"
-                  }
-                >
-                  {inquiry.consentAccepted
-                    ? "Disetujui"
-                    : "Tidak"}
-                </Badge>
-              </div>
-            </div>
-
-            {inquiry.failureReason ? (
-              <div className="rounded-xl border border-destructive/20 bg-destructive/5 p-4">
-                <p className="text-xs font-bold uppercase tracking-widest text-destructive">
-                  Failure reason
-                </p>
-
-                <p className="mt-2 text-sm leading-6 text-muted-foreground">
-                  {inquiry.failureReason}
-                </p>
-              </div>
-            ) : null}
-
-            <p className="text-xs leading-5 text-muted-foreground">
-              Perubahan status tersedia pada Stage
-              6B.
-            </p>
-          </CardContent>
-        </Card>
+        <InquiryStatusForm
+          consentAccepted={
+            inquiry.consentAccepted
+          }
+          currentStatus={inquiry.status}
+          documentStatus={
+            inquiry.documentStatus
+          }
+          emailStatus={inquiry.emailStatus}
+          failureReason={
+            inquiry.failureReason
+          }
+          inquiryCode={inquiry.inquiryCode}
+        />
 
         <Card>
           <CardHeader className="border-b border-border">
