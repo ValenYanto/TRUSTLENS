@@ -99,7 +99,8 @@ export const investmentRangeOptions = [
     label: "Rp100 juta – Rp500 juta",
   },
   {
-    value: "BETWEEN_500_MILLION_AND_1_BILLION",
+    value:
+      "BETWEEN_500_MILLION_AND_1_BILLION",
     label: "Rp500 juta – Rp1 miliar",
   },
   {
@@ -139,36 +140,81 @@ export const focusAreaOptions = [
   },
 ] as const;
 
+function isValidDateInput(value: string) {
+  if (value === "") {
+    return true;
+  }
+
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(value)) {
+    return false;
+  }
+
+  const date = new Date(
+    `${value}T00:00:00.000Z`,
+  );
+
+  return (
+    !Number.isNaN(date.getTime()) &&
+    date.toISOString().slice(0, 10) === value
+  );
+}
+
 export const investorInquirySchema = z.object({
   fullName: z
     .string()
     .trim()
-    .min(2, "Nama lengkap minimal terdiri dari 2 karakter.")
-    .max(100, "Nama lengkap maksimal 100 karakter."),
+    .min(
+      2,
+      "Nama lengkap minimal terdiri dari 2 karakter.",
+    )
+    .max(
+      100,
+      "Nama lengkap maksimal 100 karakter.",
+    ),
 
   companyName: z
     .string()
     .trim()
-    .min(2, "Nama perusahaan atau fund wajib diisi.")
-    .max(120, "Nama perusahaan maksimal 120 karakter."),
+    .min(
+      2,
+      "Nama perusahaan atau fund wajib diisi.",
+    )
+    .max(
+      120,
+      "Nama perusahaan maksimal 120 karakter.",
+    ),
 
   jobTitle: z
     .string()
     .trim()
     .min(2, "Jabatan wajib diisi.")
-    .max(100, "Jabatan maksimal 100 karakter."),
+    .max(
+      100,
+      "Jabatan maksimal 100 karakter.",
+    ),
 
   email: z
     .string()
     .trim()
-    .email("Masukkan alamat email yang valid.")
-    .max(150, "Alamat email maksimal 150 karakter."),
+    .email(
+      "Masukkan alamat email yang valid.",
+    )
+    .max(
+      150,
+      "Alamat email maksimal 150 karakter.",
+    ),
 
   whatsapp: z
     .string()
     .trim()
-    .min(8, "Nomor WhatsApp terlalu pendek.")
-    .max(25, "Nomor WhatsApp terlalu panjang.")
+    .min(
+      8,
+      "Nomor WhatsApp terlalu pendek.",
+    )
+    .max(
+      25,
+      "Nomor WhatsApp terlalu panjang.",
+    )
     .regex(
       /^[+]?[\d\s()-]+$/,
       "Nomor WhatsApp hanya boleh berisi angka dan simbol telepon.",
@@ -178,38 +224,80 @@ export const investorInquirySchema = z.object({
     .string()
     .trim()
     .min(2, "Negara wajib diisi.")
-    .max(80, "Nama negara maksimal 80 karakter."),
+    .max(
+      80,
+      "Nama negara maksimal 80 karakter.",
+    ),
 
-  investorType: z.enum(investorTypeValues, {
-    message: "Pilih jenis investor.",
-  }),
+  investorType: z.enum(
+    investorTypeValues,
+    {
+      message: "Pilih jenis investor.",
+    },
+  ),
 
-  interestType: z.enum(interestTypeValues, {
-    message: "Pilih jenis ketertarikan.",
-  }),
+  interestType: z.enum(
+    interestTypeValues,
+    {
+      message:
+        "Pilih jenis ketertarikan.",
+    },
+  ),
 
-  investmentRange: z.enum(investmentRangeValues, {
-    message: "Pilih kisaran investasi.",
-  }),
+  investmentRange: z.enum(
+    investmentRangeValues,
+    {
+      message:
+        "Pilih kisaran investasi.",
+    },
+  ),
 
-  focusArea: z.enum(focusAreaValues, {
-    message: "Pilih fokus ketertarikan.",
-  }),
+  focusArea: z.enum(
+    focusAreaValues,
+    {
+      message:
+        "Pilih fokus ketertarikan.",
+    },
+  ),
 
   preferredMeetingDate: z
     .string()
-    .max(20, "Format tanggal tidak valid.")
+    .trim()
+    .max(
+      20,
+      "Format tanggal tidak valid.",
+    )
+    .refine(isValidDateInput, {
+      message:
+        "Format tanggal pertemuan tidak valid.",
+    })
     .optional(),
 
   message: z
     .string()
     .trim()
-    .min(10, "Pesan minimal terdiri dari 10 karakter.")
-    .max(2000, "Pesan maksimal 2.000 karakter."),
+    .min(
+      10,
+      "Pesan minimal terdiri dari 10 karakter.",
+    )
+    .max(
+      2000,
+      "Pesan maksimal 2.000 karakter.",
+    ),
 
-  consentAccepted: z.boolean().refine((value) => value, {
-    message: "Persetujuan pemrosesan data wajib diberikan.",
-  }),
+  consentAccepted: z
+    .boolean()
+    .refine((value) => value, {
+      message:
+        "Persetujuan pemrosesan data wajib diberikan.",
+    }),
+
+  // Honeypot. Pengguna normal tidak akan melihat field ini.
+  website: z
+    .string()
+    .trim()
+    .max(200)
+    .optional(),
 });
 
 export type InvestorInquiryInput = z.input<

@@ -1,0 +1,111 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model InvestorInquiry {
+  id          String @id @default(cuid())
+  inquiryCode String @unique @db.VarChar(32)
+
+  fullName    String @db.VarChar(100)
+  companyName String @db.VarChar(120)
+  jobTitle    String @db.VarChar(100)
+  email       String @db.VarChar(150)
+  whatsapp    String @db.VarChar(30)
+  country     String @db.VarChar(80)
+
+  investorType    InvestorType
+  interestType    InvestmentInterest
+  investmentRange InvestmentRange
+  focusArea       InvestorFocusArea
+
+  preferredMeetingDate DateTime? @db.Date
+  message              String    @db.Text
+  consentAccepted      Boolean
+
+  status         InvestorInquiryStatus @default(NEW)
+  documentStatus DocumentStatus        @default(PENDING)
+  emailStatus    EmailDeliveryStatus   @default(PENDING)
+
+  internalNotes String? @db.Text
+  failureReason String? @db.Text
+
+  pdfGeneratedAt      DateTime?
+  internalEmailSentAt DateTime?
+  investorEmailSentAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([email])
+  @@index([companyName])
+  @@index([investorType])
+  @@index([interestType])
+  @@index([status])
+  @@index([createdAt])
+  @@map("investor_inquiries")
+}
+
+enum InvestorType {
+  ANGEL_INVESTOR
+  VENTURE_CAPITAL
+  CORPORATE_VENTURE
+  FINANCIAL_INSTITUTION
+  STRATEGIC_PARTNER
+  OTHER
+}
+
+enum InvestmentInterest {
+  EQUITY_INVESTMENT
+  STRATEGIC_PARTNERSHIP
+  PILOT_COLLABORATION
+  TECHNOLOGY_PARTNERSHIP
+  ADVISORY
+  OTHER
+}
+
+enum InvestmentRange {
+  BELOW_100_MILLION
+  BETWEEN_100_AND_500_MILLION
+  BETWEEN_500_MILLION_AND_1_BILLION
+  ABOVE_1_BILLION
+  NOT_DECIDED
+}
+
+enum InvestorFocusArea {
+  PRODUCT_DEVELOPMENT
+  AI_AND_DATA
+  INSTITUTIONAL_PILOT
+  BUSINESS_EXPANSION
+  SECURITY_AND_COMPLIANCE
+  OTHER
+}
+
+enum InvestorInquiryStatus {
+  NEW
+  CONTACTED
+  MEETING_SCHEDULED
+  QUALIFIED
+  FOLLOW_UP
+  CLOSED
+  REJECTED
+}
+
+enum DocumentStatus {
+  PENDING
+  PROCESSING
+  GENERATED
+  FAILED
+}
+
+enum EmailDeliveryStatus {
+  PENDING
+  PROCESSING
+  SENT
+  PARTIALLY_SENT
+  FAILED
+}
