@@ -1,12 +1,15 @@
 import type { Metadata } from "next";
+import Link from "next/link";
 import {
+  ArrowRight,
   CalendarClock,
   Inbox,
   MailCheck,
   UsersRound,
 } from "lucide-react";
 
-import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { InquiryStatusBadge } from "@/src/components/admin/inquiries/inquiry-status-badge";
 import { getDb } from "@/src/lib/db";
 import { requireAdminSession } from "@/src/lib/auth-session";
 
@@ -20,55 +23,9 @@ function formatDate(value: Date) {
     {
       dateStyle: "medium",
       timeStyle: "short",
+      timeZone: "Asia/Jakarta",
     },
   ).format(value);
-}
-
-function getStatusLabel(
-  status: string,
-) {
-  switch (status) {
-    case "NEW":
-      return "Baru";
-
-    case "CONTACTED":
-      return "Sudah Dihubungi";
-
-    case "MEETING_SCHEDULED":
-      return "Meeting Terjadwal";
-
-    case "QUALIFIED":
-      return "Qualified";
-
-    case "FOLLOW_UP":
-      return "Follow Up";
-
-    case "CLOSED":
-      return "Selesai";
-
-    case "REJECTED":
-      return "Ditolak";
-
-    default:
-      return status;
-  }
-}
-
-function getStatusVariant(
-  status: string,
-): "default" | "secondary" | "outline" {
-  if (status === "NEW") {
-    return "default";
-  }
-
-  if (
-    status === "CONTACTED" ||
-    status === "MEETING_SCHEDULED"
-  ) {
-    return "secondary";
-  }
-
-  return "outline";
 }
 
 export default async function AdminPage() {
@@ -148,20 +105,29 @@ export default async function AdminPage() {
 
   return (
     <div>
-      <div>
-        <p className="text-sm font-semibold text-primary">
-          Dashboard
-        </p>
+      <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+        <div>
+          <p className="text-sm font-semibold text-primary">
+            Dashboard
+          </p>
 
-        <h1 className="mt-2 font-display text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">
-          Selamat datang,{" "}
-          {session.user.name}.
-        </h1>
+          <h1 className="mt-2 font-display text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">
+            Selamat datang,{" "}
+            {session.user.name}.
+          </h1>
 
-        <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">
-          Pantau inquiry investor yang masuk
-          melalui company profile TrustLens.
-        </p>
+          <p className="mt-3 max-w-2xl leading-7 text-muted-foreground">
+            Pantau inquiry investor yang masuk
+            melalui company profile TrustLens.
+          </p>
+        </div>
+
+        <Button asChild>
+          <Link href="/admin/inquiries">
+            Lihat Semua Inquiry
+            <ArrowRight className="size-4" />
+          </Link>
+        </Button>
       </div>
 
       <section className="mt-8 grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
@@ -194,15 +160,28 @@ export default async function AdminPage() {
       </section>
 
       <section className="mt-8 overflow-hidden rounded-2xl border border-border bg-card">
-        <div className="border-b border-border px-5 py-5 sm:px-6">
-          <h2 className="font-display text-xl font-bold">
-            Inquiry terbaru
-          </h2>
+        <div className="flex flex-col gap-4 border-b border-border px-5 py-5 sm:flex-row sm:items-center sm:justify-between sm:px-6">
+          <div>
+            <h2 className="font-display text-xl font-bold">
+              Inquiry terbaru
+            </h2>
 
-          <p className="mt-1 text-sm text-muted-foreground">
-            Lima inquiry investor yang terakhir
-            diterima.
-          </p>
+            <p className="mt-1 text-sm text-muted-foreground">
+              Lima inquiry investor yang terakhir
+              diterima.
+            </p>
+          </div>
+
+          <Button
+            asChild
+            size="sm"
+            variant="outline"
+          >
+            <Link href="/admin/inquiries">
+              Lihat semua
+              <ArrowRight className="size-4" />
+            </Link>
+          </Button>
         </div>
 
         {recentInquiries.length === 0 ? (
@@ -223,24 +202,21 @@ export default async function AdminPage() {
             {recentInquiries.map(
               (inquiry) => (
                 <article
-                  className="grid gap-4 px-5 py-5 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6"
+                  className="grid gap-4 px-5 py-5 transition-colors hover:bg-muted/25 sm:grid-cols-[1fr_auto] sm:items-center sm:px-6"
                   key={inquiry.id}
                 >
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                      <p className="font-semibold">
-                        {inquiry.fullName}
-                      </p>
-
-                      <Badge
-                        variant={getStatusVariant(
-                          inquiry.status,
-                        )}
+                      <Link
+                        className="font-semibold hover:text-primary hover:underline"
+                        href={`/admin/inquiries/${inquiry.inquiryCode}`}
                       >
-                        {getStatusLabel(
-                          inquiry.status,
-                        )}
-                      </Badge>
+                        {inquiry.fullName}
+                      </Link>
+
+                      <InquiryStatusBadge
+                        status={inquiry.status}
+                      />
                     </div>
 
                     <p className="mt-1 text-sm text-muted-foreground">
@@ -253,9 +229,12 @@ export default async function AdminPage() {
                   </div>
 
                   <div className="sm:text-right">
-                    <p className="font-mono text-xs font-semibold text-primary">
+                    <Link
+                      className="font-mono text-xs font-semibold text-primary hover:underline"
+                      href={`/admin/inquiries/${inquiry.inquiryCode}`}
+                    >
                       {inquiry.inquiryCode}
-                    </p>
+                    </Link>
 
                     <p className="mt-2 text-xs text-muted-foreground">
                       {formatDate(
@@ -269,19 +248,6 @@ export default async function AdminPage() {
           </div>
         )}
       </section>
-
-      <div className="mt-6 rounded-2xl border border-primary/20 bg-primary/5 p-5">
-        <p className="font-semibold">
-          Tahap selanjutnya
-        </p>
-
-        <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Halaman daftar inquiry, detail investor,
-          perubahan status, pencatatan internal,
-          filter, pencarian, dan pagination akan
-          dibuat pada stage berikutnya.
-        </p>
-      </div>
     </div>
   );
 }
