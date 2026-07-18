@@ -3,14 +3,14 @@ import Image from "next/image";
 import Link from "next/link";
 import {
   ExternalLink,
-  LayoutDashboard,
   ShieldCheck,
 } from "lucide-react";
 
+import { Button } from "@/components/ui/button";
+import { AdminSidebarNav } from "@/src/components/admin/admin-sidebar-nav";
 import { AdminSignOutButton } from "@/src/components/admin/admin-sign-out-button";
 import { ModeToggle } from "@/src/components/theme/mode-toggle";
 import { requireAdminSession } from "@/src/lib/auth-session";
-import { Button } from "@/components/ui/button";
 
 type AdminLayoutProps = {
   children: ReactNode;
@@ -74,17 +74,17 @@ export default async function AdminLayout({
         </div>
       </header>
 
+      <div className="border-b border-border bg-background lg:hidden">
+        <div className="mx-auto max-w-7xl overflow-hidden px-4 py-3 sm:px-6">
+          <AdminSidebarNav mobile />
+        </div>
+      </div>
+
       <div className="mx-auto flex max-w-7xl gap-8 px-4 py-8 sm:px-6 lg:px-8">
         <aside className="hidden w-60 shrink-0 lg:block">
           <div className="sticky top-24">
             <div className="rounded-2xl border border-border bg-card p-3">
-              <Link
-                className="flex items-center gap-3 rounded-xl bg-primary/10 px-4 py-3 text-sm font-semibold text-primary"
-                href="/admin"
-              >
-                <LayoutDashboard className="size-4" />
-                Dashboard
-              </Link>
+              <AdminSidebarNav />
             </div>
 
             <div className="mt-4 rounded-2xl border border-border bg-card p-4">
