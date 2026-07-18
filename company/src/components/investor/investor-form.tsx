@@ -60,6 +60,25 @@ import { siteConfig } from "@/src/lib/site";
 type InvestorFormMethods =
   UseFormReturn<InvestorInquiryInput>;
 
+type SubmittedInquiry = {
+  formData: InvestorInquiryInput;
+  inquiryCode: string;
+  createdAt: string;
+};
+
+type CreateInquiryResponse =
+  | {
+      success: true;
+      data: {
+        inquiryCode: string;
+        createdAt: string;
+      };
+    }
+  | {
+      success: false;
+      message: string;
+    };
+
 const formSteps = [
   {
     title: "Identitas",
@@ -154,6 +173,19 @@ function formatMeetingDate(value?: string) {
   }).format(date);
 }
 
+function getMinimumMeetingDate() {
+  const now = new Date();
+
+  const localDate = new Date(
+    now.getTime() -
+      now.getTimezoneOffset() * 60_000,
+  );
+
+  return localDate
+    .toISOString()
+    .slice(0, 10);
+}
+
 function ReviewItem({
   label,
   value,
@@ -167,7 +199,7 @@ function ReviewItem({
         {label}
       </p>
 
-      <p className="mt-2 wrap-break-word text-sm font-semibold text-foreground">
+      <p className="mt-2 wrap_break-word text-sm font-semibold text-foreground">
         {value || "-"}
       </p>
     </div>
@@ -193,6 +225,9 @@ function IdentityStep({
           </Label>
 
           <Input
+            aria-invalid={Boolean(
+              errors.fullName,
+            )}
             autoComplete="name"
             id="fullName"
             placeholder="Nama lengkap Anda"
@@ -210,6 +245,9 @@ function IdentityStep({
           </Label>
 
           <Input
+            aria-invalid={Boolean(
+              errors.companyName,
+            )}
             autoComplete="organization"
             id="companyName"
             placeholder="Nama perusahaan atau fund"
@@ -217,7 +255,9 @@ function IdentityStep({
           />
 
           <FieldError
-            message={errors.companyName?.message}
+            message={
+              errors.companyName?.message
+            }
           />
         </div>
       </div>
@@ -229,6 +269,9 @@ function IdentityStep({
           </Label>
 
           <Input
+            aria-invalid={Boolean(
+              errors.jobTitle,
+            )}
             autoComplete="organization-title"
             id="jobTitle"
             placeholder="Contoh: Investment Director"
@@ -246,6 +289,9 @@ function IdentityStep({
           </Label>
 
           <Input
+            aria-invalid={Boolean(
+              errors.country,
+            )}
             autoComplete="country-name"
             id="country"
             placeholder="Contoh: Indonesia"
@@ -265,6 +311,9 @@ function IdentityStep({
           </Label>
 
           <Input
+            aria-invalid={Boolean(
+              errors.email,
+            )}
             autoComplete="email"
             id="email"
             placeholder="nama@perusahaan.com"
@@ -283,6 +332,9 @@ function IdentityStep({
           </Label>
 
           <Input
+            aria-invalid={Boolean(
+              errors.whatsapp,
+            )}
             autoComplete="tel"
             id="whatsapp"
             inputMode="tel"
@@ -326,7 +378,12 @@ function InterestStep({
                 onValueChange={field.onChange}
                 value={field.value}
               >
-                <SelectTrigger id="investorType">
+                <SelectTrigger
+                  aria-invalid={Boolean(
+                    errors.investorType,
+                  )}
+                  id="investorType"
+                >
                   <SelectValue placeholder="Pilih jenis investor" />
                 </SelectTrigger>
 
@@ -347,7 +404,9 @@ function InterestStep({
           />
 
           <FieldError
-            message={errors.investorType?.message}
+            message={
+              errors.investorType?.message
+            }
           />
         </div>
 
@@ -364,7 +423,12 @@ function InterestStep({
                 onValueChange={field.onChange}
                 value={field.value}
               >
-                <SelectTrigger id="interestType">
+                <SelectTrigger
+                  aria-invalid={Boolean(
+                    errors.interestType,
+                  )}
+                  id="interestType"
+                >
                   <SelectValue placeholder="Pilih bentuk kerja sama" />
                 </SelectTrigger>
 
@@ -385,7 +449,9 @@ function InterestStep({
           />
 
           <FieldError
-            message={errors.interestType?.message}
+            message={
+              errors.interestType?.message
+            }
           />
         </div>
       </div>
@@ -404,7 +470,12 @@ function InterestStep({
                 onValueChange={field.onChange}
                 value={field.value}
               >
-                <SelectTrigger id="investmentRange">
+                <SelectTrigger
+                  aria-invalid={Boolean(
+                    errors.investmentRange,
+                  )}
+                  id="investmentRange"
+                >
                   <SelectValue placeholder="Pilih kisaran investasi" />
                 </SelectTrigger>
 
@@ -444,7 +515,12 @@ function InterestStep({
                 onValueChange={field.onChange}
                 value={field.value}
               >
-                <SelectTrigger id="focusArea">
+                <SelectTrigger
+                  aria-invalid={Boolean(
+                    errors.focusArea,
+                  )}
+                  id="focusArea"
+                >
                   <SelectValue placeholder="Pilih fokus utama" />
                 </SelectTrigger>
 
@@ -476,9 +552,10 @@ function InterestStep({
         </p>
 
         <p className="mt-2 text-sm leading-6 text-muted-foreground">
-          Pilih opsi “Belum ditentukan”. Tim TrustLens
-          dapat mendiskusikan kebutuhan pendanaan dan
-          bentuk kerja sama yang paling relevan.
+          Pilih opsi “Belum ditentukan”. Tim
+          TrustLens dapat mendiskusikan kebutuhan
+          pendanaan dan bentuk kerja sama yang paling
+          relevan.
         </p>
       </div>
     </div>
@@ -496,9 +573,8 @@ function DiscussionStep({
     formState: { errors },
   } = form;
 
-  const minimumMeetingDate = new Date()
-    .toISOString()
-    .slice(0, 10);
+  const minimumMeetingDate =
+    getMinimumMeetingDate();
 
   return (
     <div className="grid gap-6">
@@ -508,10 +584,15 @@ function DiscussionStep({
         </Label>
 
         <Input
+          aria-invalid={Boolean(
+            errors.preferredMeetingDate,
+          )}
           id="preferredMeetingDate"
           min={minimumMeetingDate}
           type="date"
-          {...register("preferredMeetingDate")}
+          {...register(
+            "preferredMeetingDate",
+          )}
         />
 
         <p className="text-xs leading-5 text-muted-foreground">
@@ -521,7 +602,8 @@ function DiscussionStep({
 
         <FieldError
           message={
-            errors.preferredMeetingDate?.message
+            errors.preferredMeetingDate
+              ?.message
           }
         />
       </div>
@@ -532,6 +614,9 @@ function DiscussionStep({
         </Label>
 
         <Textarea
+          aria-invalid={Boolean(
+            errors.message,
+          )}
           className="min-h-36 resize-y"
           id="message"
           placeholder="Jelaskan hal yang ingin didiskusikan, bentuk kerja sama yang diharapkan, atau pertanyaan mengenai TrustLens."
@@ -550,11 +635,16 @@ function DiscussionStep({
           <div className="rounded-2xl border border-border bg-background/60 p-5">
             <div className="flex items-start gap-3">
               <Checkbox
+                aria-invalid={Boolean(
+                  errors.consentAccepted,
+                )}
                 checked={field.value}
                 id="consentAccepted"
                 onBlur={field.onBlur}
                 onCheckedChange={(checked) => {
-                  field.onChange(checked === true);
+                  field.onChange(
+                    checked === true,
+                  );
                 }}
               />
 
@@ -564,8 +654,9 @@ function DiscussionStep({
                   htmlFor="consentAccepted"
                 >
                   Saya menyetujui pemrosesan data
-                  untuk keperluan komunikasi investasi
-                  dan kerja sama dengan TrustLens.
+                  untuk keperluan komunikasi
+                  investasi dan kerja sama dengan
+                  TrustLens.
                 </Label>
 
                 <p className="text-xs leading-5 text-muted-foreground">
@@ -579,7 +670,8 @@ function DiscussionStep({
             <div className="mt-2">
               <FieldError
                 message={
-                  errors.consentAccepted?.message
+                  errors.consentAccepted
+                    ?.message
                 }
               />
             </div>
@@ -599,9 +691,10 @@ function ReviewStep({
     control,
   });
 
-  const preferredDate = formatMeetingDate(
-    values.preferredMeetingDate,
-  );
+  const preferredDate =
+    formatMeetingDate(
+      values.preferredMeetingDate,
+    );
 
   return (
     <div className="grid gap-8">
@@ -763,12 +856,24 @@ function ReviewStep({
 }
 
 function InvestorSuccess({
-  data,
+  inquiry,
   onReset,
 }: {
-  data: InvestorInquiryInput;
+  inquiry: SubmittedInquiry;
   onReset: () => void;
 }) {
+  const submittedDate =
+    new Date(inquiry.createdAt);
+
+  const submittedAt = Number.isNaN(
+    submittedDate.getTime(),
+  )
+    ? "-"
+    : new Intl.DateTimeFormat("id-ID", {
+        dateStyle: "long",
+        timeStyle: "short",
+      }).format(submittedDate);
+
   return (
     <div className="px-5 py-14 text-center sm:px-10 sm:py-20">
       <div className="mx-auto flex size-18 items-center justify-center rounded-full border border-primary/20 bg-primary/10">
@@ -776,19 +881,33 @@ function InvestorSuccess({
       </div>
 
       <p className="mt-7 text-sm font-bold uppercase tracking-[0.18em] text-primary">
-        Form berhasil divalidasi
+        Inquiry berhasil diterima
       </p>
 
       <h2 className="mx-auto mt-3 max-w-xl font-display text-3xl font-extrabold tracking-[-0.04em] sm:text-4xl">
-        Terima kasih, {data.fullName}.
+        Terima kasih,{" "}
+        {inquiry.formData.fullName}.
       </h2>
 
       <p className="mx-auto mt-5 max-w-xl leading-7 text-muted-foreground">
-        Informasi Anda telah lolos validasi frontend.
-        Penyimpanan database dan pengiriman otomatis
-        akan diaktifkan pada tahap integrasi
-        berikutnya.
+        Inquiry investasi Anda berhasil disimpan.
+        Simpan kode inquiry berikut sebagai
+        referensi ketika menghubungi tim TrustLens.
       </p>
+
+      <div className="mx-auto mt-7 max-w-md rounded-2xl border border-primary/20 bg-primary/5 p-5">
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-muted-foreground">
+          Kode inquiry
+        </p>
+
+        <p className="mt-2 break-all font-display text-xl font-extrabold tracking-wide text-primary">
+          {inquiry.inquiryCode}
+        </p>
+
+        <p className="mt-2 text-xs text-muted-foreground">
+          Diterima pada {submittedAt}
+        </p>
+      </div>
 
       <div className="mt-8 flex flex-col justify-center gap-3 sm:flex-row">
         <Button asChild>
@@ -818,7 +937,7 @@ function InvestorSuccess({
           type="button"
           variant="ghost"
         >
-          Isi ulang form
+          Isi inquiry baru
         </Button>
       </div>
     </div>
@@ -829,46 +948,55 @@ export function InvestorForm() {
   const [currentStep, setCurrentStep] =
     useState(0);
 
-  const [submittedData, setSubmittedData] =
-    useState<InvestorInquiryInput | null>(
-      null,
-    );
+  const [
+    submittedInquiry,
+    setSubmittedInquiry,
+  ] = useState<SubmittedInquiry | null>(
+    null,
+  );
 
-  const form = useForm<InvestorInquiryInput>({
-    resolver: zodResolver(
-      investorInquirySchema,
-    ),
+  const form =
+    useForm<InvestorInquiryInput>({
+      resolver: zodResolver(
+        investorInquirySchema,
+      ),
 
-    defaultValues: {
-      fullName: "",
-      companyName: "",
-      jobTitle: "",
-      email: "",
-      whatsapp: "",
-      country: "Indonesia",
-      preferredMeetingDate: "",
-      message: "",
-      consentAccepted: false,
-    },
+      defaultValues: {
+        fullName: "",
+        companyName: "",
+        jobTitle: "",
+        email: "",
+        whatsapp: "",
+        country: "Indonesia",
+        preferredMeetingDate: "",
+        message: "",
+        consentAccepted: false,
+        website: "",
+      },
 
-    mode: "onTouched",
-    shouldUnregister: false,
-  });
+      mode: "onTouched",
+      shouldUnregister: false,
+    });
 
   const {
     formState: { isSubmitting },
   } = form;
 
   const progress =
-    ((currentStep + 1) / formSteps.length) *
+    ((currentStep + 1) /
+      formSteps.length) *
     100;
 
   async function handleNext() {
-    const fields = stepFields[currentStep];
+    const fields =
+      stepFields[currentStep];
 
-    const valid = await form.trigger(fields, {
-      shouldFocus: true,
-    });
+    const valid = await form.trigger(
+      fields,
+      {
+        shouldFocus: true,
+      },
+    );
 
     if (!valid) {
       toast.error(
@@ -898,18 +1026,57 @@ export function InvestorForm() {
   async function handleSubmit(
     data: InvestorInquiryInput,
   ) {
-    await new Promise<void>((resolve) => {
-      window.setTimeout(resolve, 800);
-    });
+    try {
+      const response = await fetch(
+        "/api/investor-inquiries",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type":
+              "application/json",
+          },
+          body: JSON.stringify(data),
+        },
+      );
 
-    setSubmittedData(data);
+      const result =
+        (await response.json()) as CreateInquiryResponse;
 
-    toast.success(
-      "Form investor berhasil divalidasi.",
-      {
+      if (
+        !response.ok ||
+        !result.success
+      ) {
+        const message = result.success
+          ? "Inquiry belum dapat disimpan."
+          : result.message;
+
+        throw new Error(message);
+      }
+
+      setSubmittedInquiry({
+        formData: data,
+        inquiryCode:
+          result.data.inquiryCode,
+        createdAt:
+          result.data.createdAt,
+      });
+
+      toast.success(
+        "Inquiry investor berhasil disimpan.",
+        {
+          duration: 2000,
+        },
+      );
+    } catch (error) {
+      const message =
+        error instanceof Error
+          ? error.message
+          : "Terjadi kesalahan saat menyimpan inquiry.";
+
+      toast.error(message, {
         duration: 2000,
-      },
-    );
+      });
+    }
   }
 
   function handleInvalidSubmit() {
@@ -925,7 +1092,7 @@ export function InvestorForm() {
     form.reset();
 
     setCurrentStep(0);
-    setSubmittedData(null);
+    setSubmittedInquiry(null);
   }
 
   return (
@@ -942,20 +1109,22 @@ export function InvestorForm() {
               </p>
 
               <h2 className="mt-4 font-display text-4xl font-extrabold tracking-[-0.045em] sm:text-5xl">
-                Mulai percakapan bersama TrustLens.
+                Mulai percakapan bersama
+                TrustLens.
               </h2>
 
               <p className="mx-auto mt-5 max-w-2xl leading-7 text-muted-foreground">
-                Isi informasi berikut untuk membantu
-                tim kami memahami profil dan bentuk
-                kerja sama yang Anda pertimbangkan.
+                Isi informasi berikut untuk
+                membantu tim kami memahami profil
+                dan bentuk kerja sama yang Anda
+                pertimbangkan.
               </p>
             </div>
 
             <Card className="overflow-hidden border-border bg-card shadow-2xl shadow-primary/5">
-              {submittedData ? (
+              {submittedInquiry ? (
                 <InvestorSuccess
-                  data={submittedData}
+                  inquiry={submittedInquiry}
                   onReset={handleReset}
                 />
               ) : (
@@ -980,12 +1149,16 @@ export function InvestorForm() {
                     <div className="mt-8">
                       <div className="flex items-center justify-between text-xs font-semibold">
                         <span>
-                          Tahap {currentStep + 1}{" "}
-                          dari {formSteps.length}
+                          Tahap{" "}
+                          {currentStep + 1} dari{" "}
+                          {formSteps.length}
                         </span>
 
                         <span className="text-primary">
-                          {Math.round(progress)}%
+                          {Math.round(
+                            progress,
+                          )}
+                          %
                         </span>
                       </div>
 
@@ -998,21 +1171,27 @@ export function InvestorForm() {
                     <div className="mt-8 grid gap-3">
                       {formSteps.map(
                         (step, index) => {
-                          const Icon = step.icon;
+                          const Icon =
+                            step.icon;
 
                           const completed =
-                            index < currentStep;
+                            index <
+                            currentStep;
 
                           const active =
-                            index === currentStep;
+                            index ===
+                            currentStep;
 
                           return (
                             <button
                               className="flex w-full items-start gap-3 rounded-xl p-3 text-left transition-colors disabled:cursor-default"
                               disabled={
-                                index > currentStep
+                                index >
+                                currentStep
                               }
-                              key={step.title}
+                              key={
+                                step.title
+                              }
                               onClick={() => {
                                 if (
                                   index <
@@ -1033,7 +1212,9 @@ export function InvestorForm() {
                                     : completed
                                       ? "border-primary/30 bg-primary/10 text-primary"
                                       : "border-border bg-background text-muted-foreground",
-                                ].join(" ")}
+                                ].join(
+                                  " ",
+                                )}
                               >
                                 {completed ? (
                                   <Check className="size-4" />
@@ -1049,9 +1230,13 @@ export function InvestorForm() {
                                     active
                                       ? "text-foreground"
                                       : "text-muted-foreground",
-                                  ].join(" ")}
+                                  ].join(
+                                    " ",
+                                  )}
                                 >
-                                  {step.title}
+                                  {
+                                    step.title
+                                  }
                                 </span>
 
                                 <span className="mt-0.5 hidden text-xs leading-5 text-muted-foreground lg:block">
@@ -1078,8 +1263,9 @@ export function InvestorForm() {
                       </div>
 
                       <p className="mt-2 text-xs leading-5 text-muted-foreground">
-                        Hubungi tim melalui WhatsApp
-                        untuk diskusi lebih cepat.
+                        Hubungi tim melalui
+                        WhatsApp untuk diskusi lebih
+                        cepat.
                       </p>
 
                       <Button
@@ -1110,22 +1296,36 @@ export function InvestorForm() {
                         handleInvalidSubmit,
                       )}
                     >
+                      <input
+                        aria-hidden="true"
+                        autoComplete="off"
+                        className="hidden"
+                        tabIndex={-1}
+                        type="text"
+                        {...form.register(
+                          "website",
+                        )}
+                      />
+
                       <div className="mb-8">
                         <p className="text-xs font-bold uppercase tracking-[0.16em] text-primary">
-                          Tahap {currentStep + 1}
+                          Tahap{" "}
+                          {currentStep + 1}
                         </p>
 
                         <h3 className="mt-2 font-display text-2xl font-extrabold">
                           {
-                            formSteps[currentStep]
-                              .title
+                            formSteps[
+                              currentStep
+                            ].title
                           }
                         </h3>
 
                         <p className="mt-2 text-sm text-muted-foreground">
                           {
-                            formSteps[currentStep]
-                              .description
+                            formSteps[
+                              currentStep
+                            ].description
                           }
                         </p>
                       </div>
@@ -1150,7 +1350,9 @@ export function InvestorForm() {
 
                       {currentStep === 3 ? (
                         <ReviewStep
-                          control={form.control}
+                          control={
+                            form.control
+                          }
                         />
                       ) : null}
 
@@ -1162,7 +1364,9 @@ export function InvestorForm() {
                             currentStep === 0 ||
                             isSubmitting
                           }
-                          onClick={handlePrevious}
+                          onClick={
+                            handlePrevious
+                          }
                           type="button"
                           variant="outline"
                         >
@@ -1171,9 +1375,12 @@ export function InvestorForm() {
                         </Button>
 
                         {currentStep <
-                        formSteps.length - 1 ? (
+                        formSteps.length -
+                          1 ? (
                           <Button
-                            onClick={handleNext}
+                            onClick={
+                              handleNext
+                            }
                             type="button"
                           >
                             Lanjutkan
@@ -1181,18 +1388,20 @@ export function InvestorForm() {
                           </Button>
                         ) : (
                           <Button
-                            disabled={isSubmitting}
+                            disabled={
+                              isSubmitting
+                            }
                             type="submit"
                           >
                             {isSubmitting ? (
                               <>
                                 <Loader2 className="size-4 animate-spin" />
-                                Memvalidasi...
+                                Menyimpan...
                               </>
                             ) : (
                               <>
                                 <Send className="size-4" />
-                                Validasi Form
+                                Kirim Inquiry
                               </>
                             )}
                           </Button>
