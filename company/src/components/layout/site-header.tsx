@@ -96,13 +96,6 @@ export function SiteHeader() {
         <div className="hidden items-center gap-3 lg:flex">
           <ModeToggle />
 
-          <Button asChild size="sm" variant="ghost">
-            <Link href="/en">
-              EN
-              <ArrowUpRight className="size-3.5" />
-            </Link>
-          </Button>
-
           <Button asChild size="sm" variant="outline">
             <Link
               href={siteConfig.productDemoUrl}
@@ -154,7 +147,7 @@ export function SiteHeader() {
 
               <nav
                 aria-label="Navigasi mobile"
-                className="mt-10 flex flex-col gap-2"
+                className=" flex flex-col gap-2"
               >
                 {siteConfig.navigation.map((item) => (
                   <SheetClose asChild key={item.href}>
@@ -168,14 +161,7 @@ export function SiteHeader() {
                 ))}
               </nav>
 
-              <div className="mt-8 grid gap-3">
-                <Button asChild variant="outline">
-                  <Link href="/en">
-                    English Version
-                    <ArrowUpRight className="size-4" />
-                  </Link>
-                </Button>
-
+              <div className=" grid gap-3">
                 <Button asChild variant="outline">
                   <Link
                     href={siteConfig.productDemoUrl}

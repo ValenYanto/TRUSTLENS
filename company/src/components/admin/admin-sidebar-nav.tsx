@@ -4,6 +4,7 @@ import Link from "next/link";
 import {
   Inbox,
   LayoutDashboard,
+  ShieldUser,
 } from "lucide-react";
 import { usePathname } from "next/navigation";
 
@@ -23,6 +24,11 @@ const navigationItems = [
     label: "Investor Inquiries",
     href: "/admin/inquiries",
     icon: Inbox,
+  },
+  {
+    label: "Akun Admin",
+    href: "/admin/admins",
+    icon: ShieldUser,
   },
 ] as const;
 
